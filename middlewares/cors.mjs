@@ -8,6 +8,7 @@ const ACEPTED_ORIGINS = [
   "http://localhost:60458", // Puerto dinámico de VS Code Live Server
   "http://localhost:3000", // Puerto base de Node.js
   "http://localhost:8080", // Puerto estándar para frameworks como Vue o Angular
+  "https://api-rest-movies-self.vercel.app",
 ];
 
 /**
@@ -20,7 +21,7 @@ export const middlewareCors = (req, res, next) => {
 
   // Verificamos si el origen está en nuestra lista blanca.
   // También podríamos añadir 'if (!origin)' para permitir peticiones locales/herramientas de testing.
-  if (ACEPTED_ORIGINS.includes(origin) || !origin) {
+  if (ACEPTED_ORIGINS.includes(origin) || (origin && origin.endsWith(".vercel.app"))) {
     // 1. Especificamos qué origen tiene permiso para leer la respuesta.
     // Usamos el origen dinámico en lugar de "*" para mayor seguridad.
     res.setHeader("Access-Control-Allow-Origin", origin ?? "*");
@@ -35,6 +36,10 @@ export const middlewareCors = (req, res, next) => {
     // 3. Indicamos qué cabeceras personalizadas puede enviar el cliente.
     // Sin "Content-Type", el cliente no podría enviarte JSON en el body.
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  }
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
   }
 
   // IMPORTANTE: next() permite que la petición siga su camino hacia los Routers.
