@@ -45,7 +45,7 @@
     /**
      * Petición inicial (GET): Obtenemos todas las películas del servidor
      */
-    fetch('http://localhost:3000/movies')
+    fetch('https://tu-api.koyeb.app/movies')
         .then(res => res.json()) // Convertimos la respuesta a JSON
         .then(movies => {
             // Generamos el HTML dinámicamente usando .map()
@@ -79,7 +79,7 @@
                 const id = event.target.dataset.id;
 
                 // Enviamos la petición DELETE al servidor para el ID específico
-                fetch(`http://localhost:3000/movies/${id}`, {
+                fetch(`https://tu-api.koyeb.app/movies/${id}`, {
                     method: 'DELETE'
                 })
                 .then(res => {
