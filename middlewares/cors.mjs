@@ -21,7 +21,7 @@ export const middlewareCors = (req, res, next) => {
 
   // Verificamos si el origen está en nuestra lista blanca.
   // También podríamos añadir 'if (!origin)' para permitir peticiones locales/herramientas de testing.
-  if (ACEPTED_ORIGINS.includes(origin) || !origin) {
+  if (ACEPTED_ORIGINS.includes(origin) || (origin && origin.endsWith(".vercel.app"))) {
     // 1. Especificamos qué origen tiene permiso para leer la respuesta.
     // Usamos el origen dinámico en lugar de "*" para mayor seguridad.
     res.setHeader("Access-Control-Allow-Origin", origin ?? "*");
