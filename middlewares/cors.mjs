@@ -8,6 +8,7 @@ const ACEPTED_ORIGINS = [
   "http://localhost:60458", // Puerto dinámico de VS Code Live Server
   "http://localhost:3000", // Puerto base de Node.js
   "http://localhost:8080", // Puerto estándar para frameworks como Vue o Angular
+  "https://api-rest-movies-ckux-l3nc7dtfo-hector-0-0s-projects.vercel.app",
 ];
 
 /**
