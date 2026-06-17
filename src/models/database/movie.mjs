@@ -1,18 +1,9 @@
 //movie.mjs
 
-import mysql from "mysql2/promise";
-
-// Configuración de conexión usando variables de entorno para mayor seguridad
-const config = {
-  host: process.env.DB_HOST || "localhost",
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_NAME || "moviesdb",
-  port: process.env.DB_PORT || 3306,
-};
-
-// Creamos la conexión (usando await en el top-level permitido por ES Modules)
-const connection = await mysql.createConnection(config);
+// Reutilizamos el pool de conexiones compartido (ver src/db/connection.mjs).
+// Un pool tolera desconexiones por inactividad y peticiones concurrentes,
+// algo necesario en bases gestionadas como Aiven.
+import { pool as connection } from "../../db/connection.mjs";
 
 export class MovieModel {
   static async getAll({ genre }) {

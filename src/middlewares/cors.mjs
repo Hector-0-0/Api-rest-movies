@@ -1,15 +1,13 @@
 //cors.mjs
 
+import { config } from "../config/index.mjs";
+
 /**
- * Lista blanca (Whitelist) de dominios permitidos.
- * Es crucial incluir aquí los puertos de tus entornos de desarrollo (Vite, Live Server, etc.)
+ * Lista blanca (whitelist) de dominios permitidos, cargada desde la
+ * configuración (CORS_ORIGINS en el .env). Cualquier subdominio de
+ * *.vercel.app se acepta para no tener que listar cada preview deploy.
  */
-const ACEPTED_ORIGINS = [
-  "http://localhost:60458", // Puerto dinámico de VS Code Live Server
-  "http://localhost:3000", // Puerto base de Node.js
-  "http://localhost:8080", // Puerto estándar para frameworks como Vue o Angular
-  "https://api-rest-movies-self.vercel.app",
-];
+const ACCEPTED_ORIGINS = config.corsOrigins;
 
 /**
  * middlewareCors: Actúa como el filtro de seguridad para las peticiones cruzadas.
@@ -21,7 +19,7 @@ export const middlewareCors = (req, res, next) => {
 
   // Verificamos si el origen está en nuestra lista blanca.
   // También podríamos añadir 'if (!origin)' para permitir peticiones locales/herramientas de testing.
-  if (ACEPTED_ORIGINS.includes(origin) || (origin && origin.endsWith(".vercel.app"))) {
+  if (ACCEPTED_ORIGINS.includes(origin) || (origin && origin.endsWith(".vercel.app"))) {
     // 1. Especificamos qué origen tiene permiso para leer la respuesta.
     // Usamos el origen dinámico en lugar de "*" para mayor seguridad.
     res.setHeader("Access-Control-Allow-Origin", origin ?? "*");
