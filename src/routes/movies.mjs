@@ -1,42 +1,45 @@
 //routes/movies.mjs
 
-import Router from "express";
+import { Router } from "express";
 import { MovieController } from "../controllers/movies.mjs";
+import { asyncHandler } from "../middlewares/async-handler.mjs";
+import { validate } from "../middlewares/validate.mjs";
+import {
+  movieSchema,
+  partialMovieSchema,
+  listMoviesQuerySchema,
+} from "../schemas/movies.mjs";
 
 /**
- * createMovieRouter: Una función fábrica (factory function).
- * @param {Object} movieModel - El modelo de datos que queremos usar (JSON, MySQL, MongoDB, etc.)
- * @returns {Router} - Un router de Express configurado.
+ * createMovieRouter: factory that wires the movies routes around an injected
+ * model. Validation runs as middleware before each handler.
  */
 export const createMovieRouter = ({ movieModel }) => {
-  const moviesRouter = Router();
+  const router = Router();
+  const controller = new MovieController({ movieModel });
 
-  /**
-   * Inyectamos el modelo al controlador.
-   * Aquí es donde sucede la magia: el controlador recibe las herramientas que necesita
-   * para trabajar sin saber los detalles técnicos de la base de datos.
-   */
-  const movieController = new MovieController({ movieModel });
+  // GET /movies?page&limit&genre&sort — list with pagination/filter/sort
+  router.get(
+    "/",
+    validate(listMoviesQuerySchema, "query"),
+    asyncHandler(controller.getAll),
+  );
 
-  // Definición de rutas:
-  // Al usar movieController.getAll, estamos pasando la referencia de la función.
-  // Como en el controlador usamos Arrow Functions, el 'this' no se pierde.
+  // GET /movies/:id
+  router.get("/:id", asyncHandler(controller.getById));
 
-  // GET /movies - Listar (y filtrar)
-  moviesRouter.get("/", movieController.getAll);
+  // POST /movies
+  router.post("/", validate(movieSchema), asyncHandler(controller.create));
 
-  // GET /movies/:id - Obtener una
-  moviesRouter.get("/:id", movieController.getById);
+  // PATCH /movies/:id — partial update
+  router.patch(
+    "/:id",
+    validate(partialMovieSchema),
+    asyncHandler(controller.update),
+  );
 
-  // POST /movies - Crear
-  moviesRouter.post("/", movieController.create);
+  // DELETE /movies/:id
+  router.delete("/:id", asyncHandler(controller.delete));
 
-  // PATCH /movies/:id - Actualizar parcialmente
-  moviesRouter.patch("/:id", movieController.update);
-
-  // DELETE /movies/:id - Eliminar
-  moviesRouter.delete("/:id", movieController.delete);
-
-  // Devolvemos el router listo para ser usado por app.use()
-  return moviesRouter;
+  return router;
 };

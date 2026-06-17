@@ -1,68 +1,84 @@
 //schemas/movies.mjs
 
-// Importamos zod, una librería de declaración y validación de esquemas TypeScript-first
-import z from "zod";
+// Zod schemas: the single source of truth for the shape of movie data and
+// of the query parameters accepted by the list endpoint.
+import { z } from "zod";
+
+// Genres allowed across the API. Kept here so schema and DB seed stay aligned.
+export const GENRES = [
+  "Action",
+  "Adventure",
+  "Crime",
+  "Comedy",
+  "Drama",
+  "Horror",
+  "Sci-Fi",
+  "Romance",
+];
+
+// Fields the list endpoint can be sorted by (whitelist prevents SQL injection
+// when the value is interpolated into an ORDER BY clause).
+export const SORTABLE_FIELDS = ["title", "year", "duration", "rate"];
+
+const currentYear = new Date().getFullYear();
 
 /**
- * movieSchema: El "contrato" que deben cumplir tus datos.
- * Zod no solo valida tipos (string, number), sino también lógica (url, min, max).
+ * movieSchema: the contract every movie must satisfy.
  */
-const movieSchema = z.object({
-  // Validación de texto con mensaje de error personalizado
-  title: z.string({
-    invalid_type_error: "Title must be a string",
-  }),
+export const movieSchema = z.object({
+  title: z.string({ message: "Title must be a string" }).min(1),
 
-  // .optional() permite que el campo no venga en el JSON (o sea undefined)
-  rate: z.number().max(10).min(0).optional(),
+  year: z
+    .number()
+    .int()
+    .min(1900)
+    .max(currentYear + 5),
 
-  // .int() asegura que no aceptemos decimales para el año o la duración
-  year: z.number().int().min(1900).max(2024),
-
-  director: z.string(),
+  director: z.string().min(1),
 
   duration: z.number().int().positive(),
 
-  // .url() es genial para validar que el poster sea una dirección web real
-  poster: z.string().url({
-    message: "Poster must be a string and a valid URL",
-  }),
+  rate: z.number().min(0).max(10).optional(),
 
-  /**
-   * z.enum: Crea una lista cerrada de valores permitidos.
-   * Si el usuario envía "Anime", Zod lanzará un error porque no está en la lista.
-   */
+  poster: z.string().url({ message: "Poster must be a valid URL" }),
+
   genre: z
-    .array(
-      z.enum([
-        "Action",
-        "Adventure",
-        "Crime",
-        "Comedy",
-        "Drama",
-        "Horror",
-        "Sci-Fi",
-      ]),
-    )
+    .array(z.enum(GENRES))
     .nonempty({ message: "Genre must be a non-empty array of valid genres" }),
 });
 
 /**
- * validateMovie: Se usa para el método POST (creación).
- * Revisa que TODO el objeto cumpla con el esquema.
- * Usamos .safeParse() para que no lance una excepción (error),
- * sino que devuelva un objeto con { success: true/false }.
+ * listMoviesQuerySchema: validates and coerces the query string of
+ * GET /movies. Strings from the URL are coerced to numbers and defaults
+ * are applied so the controller always gets clean values.
+ */
+export const listMoviesQuerySchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(10),
+  genre: z.enum(GENRES).optional(),
+  // Sort by a whitelisted field; a leading "-" means descending (e.g. -rate).
+  sort: z
+    .string()
+    .optional()
+    .refine(
+      (value) =>
+        value === undefined ||
+        SORTABLE_FIELDS.includes(value.replace(/^-/, "")),
+      {
+        message: `sort must be one of: ${SORTABLE_FIELDS.join(", ")} (prefix with - for descending)`,
+      },
+    ),
+});
+
+/**
+ * Backwards-compatible helpers (still used by the in-memory model/tests).
  */
 export function validateMovie(input) {
   return movieSchema.safeParse(input);
 }
 
-/**
- * validatePartialMovie: Se usa para el método PATCH (actualización).
- * .partial() convierte todas las propiedades del esquema en opcionales.
- * Esto permite que el usuario envíe SOLO el 'title' o SOLO el 'year'
- * sin que Zod se queje de que faltan los demás campos.
- */
 export function validatePartialMovie(input) {
   return movieSchema.partial().safeParse(input);
 }
+
+export const partialMovieSchema = movieSchema.partial();

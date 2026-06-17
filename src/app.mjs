@@ -4,8 +4,11 @@
 // import the app and run it with Supertest without opening a port.
 
 import express from "express";
+import helmet from "helmet";
 import { createMovieRouter } from "./routes/movies.mjs";
 import { middlewareCors } from "./middlewares/cors.mjs";
+import { apiRateLimiter } from "./middlewares/rate-limit.mjs";
+import { notFoundHandler, errorHandler } from "./middlewares/error-handler.mjs";
 
 /**
  * createApp: factory that wires middlewares and routes around an injected
@@ -18,14 +21,23 @@ import { middlewareCors } from "./middlewares/cors.mjs";
 export const createApp = ({ movieModel }) => {
   const app = express();
 
+  // Trust the proxy so rate limiting and client IPs work behind Koyeb/Vercel.
+  app.set("trust proxy", 1);
+
+  // Security headers.
+  app.use(helmet());
+
+  // CORS whitelist (origins come from configuration).
+  app.use(middlewareCors);
+
   // Parse incoming JSON bodies into req.body.
   app.use(express.json());
 
   // Don't advertise that we run on Express.
   app.disable("x-powered-by");
 
-  // CORS whitelist (origins come from configuration).
-  app.use(middlewareCors);
+  // Throttle requests per IP.
+  app.use(apiRateLimiter);
 
   // Health check — handy for the deploy platform and uptime probes.
   app.get("/health", (req, res) => {
@@ -34,6 +46,12 @@ export const createApp = ({ movieModel }) => {
 
   // Movies resource. The model is injected down the router → controller chain.
   app.use("/movies", createMovieRouter({ movieModel }));
+
+  // Unknown routes → 404 in the consistent error shape.
+  app.use(notFoundHandler);
+
+  // Central error handler (must be last).
+  app.use(errorHandler);
 
   return app;
 };
