@@ -19,7 +19,7 @@ export class UserModel {
       return rows[0] ?? null;
     } catch (error) {
       console.error("Database error in findByEmail:", error.message);
-      throw new Error("Error retrieving user from database");
+      throw new Error("Error retrieving user from database", { cause: error });
     }
   }
 
@@ -40,7 +40,7 @@ export class UserModel {
       return { id: uuid, email, role };
     } catch (error) {
       console.error("Database error in create user:", error.message);
-      throw new Error("Error creating user in database");
+      throw new Error("Error creating user in database", { cause: error });
     }
   }
 }
