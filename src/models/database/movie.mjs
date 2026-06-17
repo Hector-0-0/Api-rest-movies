@@ -4,39 +4,57 @@
 // Un pool tolera desconexiones por inactividad y peticiones concurrentes,
 // algo necesario en bases gestionadas como Aiven.
 import { pool as connection } from "../../db/connection.mjs";
+import { SORTABLE_FIELDS } from "../../schemas/movies.mjs";
 
 export class MovieModel {
-  static async getAll({ genre }) {
+  /**
+   * Lista películas con paginación, filtro por género y ordenamiento.
+   * @param {Object} options
+   * @param {string} [options.genre] - Filtra por nombre de género.
+   * @param {number} [options.page=1]
+   * @param {number} [options.limit=10]
+   * @param {string} [options.sort] - Campo de orden; prefijo "-" = descendente.
+   * @returns {Promise<{ data: Array, total: number }>}
+   */
+  static async getAll({ genre, page = 1, limit = 10, sort } = {}) {
     try {
-      if (genre) {
-        const lowerGenre = genre.toLowerCase();
+      const offset = (page - 1) * limit;
 
-        // 1. Buscamos el ID del género para asegurar que existe
-        const [genres] = await connection.query(
-          "SELECT id, name FROM genre WHERE LOWER(name) = ?",
-          [lowerGenre],
-        );
-
-        if (genres.length === 0) return [];
-
-        // 2. Traemos las películas usando un JOIN en la tabla intermedia (Muchos a Muchos)
-        // Usamos BIN_TO_UUID porque el ID en MySQL se guarda como binario(16) por rendimiento
-        const genreId = genres[0].id;
-        const [rows] = await connection.query(
-          `SELECT m.title, m.year, m.director, m.duration, m.poster, m.rate, BIN_TO_UUID(m.id) id 
-           FROM movie m
-           JOIN movie_genres mg ON m.id = mg.movie_id
-           WHERE mg.genre_id = ?`,
-          [genreId],
-        );
-        return rows;
+      // ORDER BY a partir de un campo de la whitelist (evita inyección).
+      let orderBy = "";
+      if (sort) {
+        const direction = sort.startsWith("-") ? "DESC" : "ASC";
+        const field = sort.replace(/^-/, "");
+        if (SORTABLE_FIELDS.includes(field)) {
+          orderBy = `ORDER BY m.${field} ${direction}`;
+        }
       }
 
-      // Si no hay género, traemos todas las películas
-      const [rows] = await connection.query(
-        "SELECT title, year, director, duration, poster, rate, BIN_TO_UUID(id) id FROM movie",
+      // Filtro por género: resolvemos el JOIN con la tabla intermedia.
+      const genreJoin = genre
+        ? "JOIN movie_genres mg ON m.id = mg.movie_id JOIN genre g ON g.id = mg.genre_id"
+        : "";
+      const where = genre ? "WHERE LOWER(g.name) = ?" : "";
+      const filterParams = genre ? [genre.toLowerCase()] : [];
+
+      // Total de coincidencias (para la metadata de paginación).
+      const [[{ total }]] = await connection.query(
+        `SELECT COUNT(DISTINCT m.id) AS total FROM movie m ${genreJoin} ${where}`,
+        filterParams,
       );
-      return rows;
+
+      // Página de resultados.
+      const [rows] = await connection.query(
+        `SELECT m.title, m.year, m.director, m.duration, m.poster, m.rate, BIN_TO_UUID(m.id) id
+         FROM movie m
+         ${genreJoin}
+         ${where}
+         ${orderBy}
+         LIMIT ? OFFSET ?`,
+        [...filterParams, limit, offset],
+      );
+
+      return { data: rows, total };
     } catch (error) {
       console.error("Database error in getAll:", error.message);
       throw new Error("Error retrieving movies from database");

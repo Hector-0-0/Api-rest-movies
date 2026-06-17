@@ -1,93 +1,70 @@
 //movies.mjs
 
-// IMPORTANTE: Los JSON se importan como default.
-// Usamos "with { type: 'json' }" (Import Attributes), el estándar moderno de ES Modules.
-import peliculas from "../../movies.json" with { type: "json" };
-import crypto from "node:crypto"; // Módulo nativo de Node.js para criptografía y generación de UUIDs
+// In-memory model backed by the seed JSON. Useful for local runs without a
+// database and as a fast, isolated backend for tests. Its method contract
+// mirrors the MySQL model so the controller is agnostic to the data source.
+import seed from "../../movies.json" with { type: "json" };
+import crypto from "node:crypto";
+import { SORTABLE_FIELDS } from "../../schemas/movies.mjs";
 
-/**
- * MovieModel: Clase de la capa de datos.
- * Encapsula toda la interacción con el "almacenamiento".
- * Al usar métodos estáticos, la clase actúa como un contenedor de lógica global (Singleton-like).
- */
+// Work on a copy so the seed file is never mutated at runtime.
+let movies = structuredClone(seed);
+
 export class MovieModel {
-  /**
-   * Recupera la lista de películas.
-   * @param {string} genre - Filtro opcional.
-   * La firma del método recibe un objeto ({ genre }) para facilitar la expansión de filtros.
-   */
-  static async getAll({ genre }) {
+  /** Resets the in-memory store to the original seed (handy for tests). */
+  static reset() {
+    movies = structuredClone(seed);
+  }
+
+  static async getAll({ genre, page = 1, limit = 10, sort } = {}) {
+    let result = movies;
+
     if (genre) {
-      // Filtrado Insensitive: convertimos todo a minúsculas para evitar fallos por "Action" vs "action"
-      return peliculas.filter((movie) =>
-        movie.genre.some((g) => g.toLowerCase() === genre.toLowerCase()),
+      result = result.filter((movie) =>
+        movie.genre?.some((g) => g.toLowerCase() === genre.toLowerCase()),
       );
     }
-    return peliculas; // Si no hay filtros, devolvemos la referencia al array completo
-  }
 
-  /**
-   * Busca una película por su identificador único (UUID).
-   */
-  static async getById(id) {
-    const movie = peliculas.find((movie) => movie.id === id);
-    // Control de flujo mediante excepciones: si no existe, lanzamos un Error
-    // que deberá ser capturado por el controlador (try/catch).
-    if (!movie) {
-      throw new Error("Movie not found");
+    if (sort) {
+      const direction = sort.startsWith("-") ? -1 : 1;
+      const field = sort.replace(/^-/, "");
+      if (SORTABLE_FIELDS.includes(field)) {
+        result = [...result].sort((a, b) => {
+          if (a[field] < b[field]) return -1 * direction;
+          if (a[field] > b[field]) return 1 * direction;
+          return 0;
+        });
+      }
     }
-    return movie;
+
+    const total = result.length;
+    const offset = (page - 1) * limit;
+    return { data: result.slice(offset, offset + limit), total };
   }
 
-  /**
-   * Crea un nuevo registro de película.
-   * @param {Object} movieData - Objeto con los datos ya validados por Zod.
-   */
-  static async create(movieData) {
-    const newMovie = {
-      id: crypto.randomUUID(), // Genera un ID robusto de 36 caracteres (v4)
-      ...movieData, // Técnica 'Spread': esparce las propiedades validadas dentro del nuevo objeto
-    };
+  static async getById(id) {
+    return movies.find((movie) => movie.id === id) ?? null;
+  }
 
-    // NOTA: peliculas es una referencia al JSON cargado en memoria.
-    // Los cambios persistirán mientras el proceso de Node esté vivo.
-    peliculas.push(newMovie);
+  static async create(movieData) {
+    const newMovie = { id: crypto.randomUUID(), ...movieData };
+    movies.push(newMovie);
     return newMovie;
   }
 
-  /**
-   * Actualización parcial (PATCH).
-   * Solo modifica los campos que vienen en 'updateData'.
-   */
   static async update(id, updateData) {
-    const movieIndex = peliculas.findIndex((movie) => movie.id === id);
+    const index = movies.findIndex((movie) => movie.id === id);
+    if (index === -1) return false;
 
-    if (movieIndex === -1) {
-      throw new Error("Movie not found");
-    }
-
-    // Fusionamos (Merge): los valores en updateData sobreescriben a los originales
-    const updatedMovie = {
-      ...peliculas[movieIndex],
-      ...updateData,
-    };
-
-    peliculas[movieIndex] = updatedMovie;
-    return updatedMovie;
+    movies[index] = { ...movies[index], ...updateData };
+    return movies[index];
   }
 
-  /**
-   * Elimina el recurso del array de datos.
-   */
   static async delete(id) {
-    const movieIndex = peliculas.findIndex((movie) => movie.id === id);
+    const index = movies.findIndex((movie) => movie.id === id);
+    if (index === -1) return 0;
 
-    if (movieIndex === -1) {
-      throw new Error("Movie not found");
-    }
-
-    // El método .splice() muta el array original eliminando el elemento en el índice dado
-    peliculas.splice(movieIndex, 1);
-    return true; // Indicamos éxito de la operación
+    movies.splice(index, 1);
+    return 1;
   }
 }
