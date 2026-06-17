@@ -1,0 +1,44 @@
+# Local development stack: MySQL + the API, both up with `docker compose up`.
+# The database is auto-seeded from movies_db.sql on first start.
+
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: moviesdb
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      # Runs only on first boot (empty data dir): creates and seeds the schema.
+      - ./movies_db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_HOST: db
+      DB_USER: root
+      DB_PASSWORD: rootpassword
+      DB_NAME: moviesdb
+      DB_PORT: 3306
+      DB_SSL: "false"
+      CORS_ORIGINS: http://localhost:3000
+      JWT_SECRET: local-dev-secret-change-me
+      JWT_EXPIRES_IN: 1d
+      BCRYPT_ROUNDS: 10
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db_data:

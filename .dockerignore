@@ -1,0 +1,17 @@
+node_modules
+npm-debug.log*
+coverage
+tests
+.git
+.gitignore
+.github
+.env
+.env.*
+!.env.example
+Dockerfile
+.dockerignore
+docker-compose.yml
+README.md
+*.md
+web
+AplicativoCentroMedico

@@ -57,7 +57,7 @@ export class MovieModel {
       return { data: rows, total };
     } catch (error) {
       console.error("Database error in getAll:", error.message);
-      throw new Error("Error retrieving movies from database");
+      throw new Error("Error retrieving movies from database", { cause: error });
     }
   }
 
@@ -74,7 +74,7 @@ export class MovieModel {
       return rows[0];
     } catch (error) {
       console.error("Database error in getById:", error.message);
-      throw new Error("Error retrieving movie from database");
+      throw new Error("Error retrieving movie from database", { cause: error });
     }
   }
 
@@ -104,7 +104,7 @@ export class MovieModel {
     } catch (error) {
       await conn.rollback();
       console.error("Database error in create:", error.message);
-      throw new Error("Error creating movie in database");
+      throw new Error("Error creating movie in database", { cause: error });
     } finally {
       conn.release();
     }
@@ -179,7 +179,7 @@ export class MovieModel {
     } catch (error) {
       await conn.rollback();
       console.error("Database error in update:", error.message);
-      throw new Error("Error updating movie in database");
+      throw new Error("Error updating movie in database", { cause: error });
     } finally {
       conn.release();
     }
@@ -195,7 +195,7 @@ export class MovieModel {
       return result.affectedRows;
     } catch (error) {
       console.error("Database error in delete:", error.message);
-      throw new Error("Error deleting movie from database");
+      throw new Error("Error deleting movie from database", { cause: error });
     }
   }
 }
