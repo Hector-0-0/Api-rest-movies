@@ -5,8 +5,10 @@
 
 import express from "express";
 import helmet from "helmet";
+import swaggerUi from "swagger-ui-express";
 import { createMovieRouter } from "./routes/movies.mjs";
 import { createAuthRouter } from "./routes/auth.mjs";
+import { openapiSpec } from "./docs/openapi.mjs";
 import { middlewareCors } from "./middlewares/cors.mjs";
 import { apiRateLimiter } from "./middlewares/rate-limit.mjs";
 import { notFoundHandler, errorHandler } from "./middlewares/error-handler.mjs";
@@ -25,6 +27,15 @@ export const createApp = ({ movieModel, userModel }) => {
 
   // Trust the proxy so rate limiting and client IPs work behind Koyeb/Vercel.
   app.set("trust proxy", 1);
+
+  // API docs (Swagger UI). Mounted before the strict global helmet and the
+  // rate limiter so the UI's inline assets aren't blocked by the default CSP
+  // and loading the docs doesn't eat into a client's request budget.
+  app.use(
+    "/docs",
+    swaggerUi.serve,
+    swaggerUi.setup(openapiSpec, { customSiteTitle: "Movies API Docs" }),
+  );
 
   // Security headers.
   app.use(helmet());
