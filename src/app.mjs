@@ -6,19 +6,21 @@
 import express from "express";
 import helmet from "helmet";
 import { createMovieRouter } from "./routes/movies.mjs";
+import { createAuthRouter } from "./routes/auth.mjs";
 import { middlewareCors } from "./middlewares/cors.mjs";
 import { apiRateLimiter } from "./middlewares/rate-limit.mjs";
 import { notFoundHandler, errorHandler } from "./middlewares/error-handler.mjs";
 
 /**
- * createApp: factory that wires middlewares and routes around an injected
- * data model, so the same app can run against MySQL or an in-memory model.
+ * createApp: factory that wires middlewares and routes around injected
+ * data models, so the same app can run against MySQL or in-memory models.
  *
  * @param {Object} deps
  * @param {Object} deps.movieModel - Data model implementing the movie CRUD.
+ * @param {Object} deps.userModel - Data model implementing user persistence.
  * @returns {import("express").Express}
  */
-export const createApp = ({ movieModel }) => {
+export const createApp = ({ movieModel, userModel }) => {
   const app = express();
 
   // Trust the proxy so rate limiting and client IPs work behind Koyeb/Vercel.
@@ -43,6 +45,9 @@ export const createApp = ({ movieModel }) => {
   app.get("/health", (req, res) => {
     res.json({ status: "ok" });
   });
+
+  // Authentication (register/login). Public routes that mint JWTs.
+  app.use("/auth", createAuthRouter({ userModel }));
 
   // Movies resource. The model is injected down the router → controller chain.
   app.use("/movies", createMovieRouter({ movieModel }));

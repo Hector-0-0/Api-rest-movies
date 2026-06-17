@@ -79,32 +79,71 @@ export class MovieModel {
   }
 
   static async create(movieData) {
+    const conn = await connection.getConnection();
     try {
-      const { title, year, director, duration, poster, rate } = movieData;
+      const { title, year, director, duration, poster, rate, genre } = movieData;
+
+      await conn.beginTransaction();
 
       // Generamos un UUID nuevo directamente en MySQL
-      const [[{ uuid: uuidValue }]] = await connection.query(
-        "SELECT UUID() AS uuid",
-      );
+      const [[{ uuid: uuidValue }]] = await conn.query("SELECT UUID() AS uuid");
 
       // Insertamos convirtiendo el UUID string a binario
-      await connection.query(
+      await conn.query(
         "INSERT INTO movie (id, title, year, director, duration, poster, rate) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?, ?, ?)",
         [uuidValue, title, year, director, duration, poster, rate],
       );
 
+      // Enlazamos los géneros en la tabla intermedia.
+      await this.#syncGenres(conn, uuidValue, genre);
+
+      await conn.commit();
+
       // Retornamos la película recién creada para confirmar el registro
       return await this.getById(uuidValue);
     } catch (error) {
+      await conn.rollback();
       console.error("Database error in create:", error.message);
       throw new Error("Error creating movie in database");
+    } finally {
+      conn.release();
     }
   }
 
+  /**
+   * Reemplaza los géneros de una película dentro de una transacción.
+   * Resuelve nombres → ids contra la tabla `genre` (whitelist ya validada
+   * por Zod, así que todos deberían existir).
+   */
+  static async #syncGenres(conn, id, genres) {
+    if (!genres || genres.length === 0) return;
+
+    await conn.query(
+      "DELETE FROM movie_genres WHERE movie_id = UUID_TO_BIN(?)",
+      [id],
+    );
+
+    const [rows] = await conn.query(
+      `SELECT id FROM genre WHERE name IN (${genres.map(() => "?").join(",")})`,
+      genres,
+    );
+    if (rows.length === 0) return;
+
+    await conn.query(
+      `INSERT INTO movie_genres (movie_id, genre_id) VALUES ${rows
+        .map(() => "(UUID_TO_BIN(?), ?)")
+        .join(", ")}`,
+      rows.flatMap((row) => [id, row.id]),
+    );
+  }
+
   static async update(id, updateData) {
+    const conn = await connection.getConnection();
     try {
       const currentMovie = await this.getById(id);
       if (!currentMovie) return false;
+
+      await conn.beginTransaction();
 
       // Lógica de "Mezcla": Si el dato no viene en el update, mantenemos el actual
       const updatedData = {
@@ -116,7 +155,7 @@ export class MovieModel {
         rate: updateData.rate ?? currentMovie.rate,
       };
 
-      await connection.query(
+      await conn.query(
         "UPDATE movie SET title = ?, year = ?, director = ?, duration = ?, poster = ?, rate = ? WHERE id = UUID_TO_BIN(?)",
         [
           updatedData.title,
@@ -129,10 +168,20 @@ export class MovieModel {
         ],
       );
 
+      // Solo tocamos los géneros si el cliente los envió.
+      if (updateData.genre) {
+        await this.#syncGenres(conn, id, updateData.genre);
+      }
+
+      await conn.commit();
+
       return await this.getById(id);
     } catch (error) {
+      await conn.rollback();
       console.error("Database error in update:", error.message);
       throw new Error("Error updating movie in database");
+    } finally {
+      conn.release();
     }
   }
 
