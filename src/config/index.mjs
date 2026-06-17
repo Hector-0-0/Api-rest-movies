@@ -27,4 +27,13 @@ export const config = {
     // Aiven (and most managed MySQL) require TLS. Enable with DB_SSL=true.
     ssl: process.env.DB_SSL === "true",
   },
+
+  auth: {
+    // Secret used to sign/verify JWTs. MUST be overridden in production via env.
+    jwtSecret: process.env.JWT_SECRET ?? "dev-only-insecure-secret-change-me",
+    // Token lifetime accepted by jsonwebtoken (e.g. "1h", "7d").
+    jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? "1d",
+    // bcrypt cost factor (higher = slower = safer).
+    bcryptRounds: Number(process.env.BCRYPT_ROUNDS ?? 10),
+  },
 };
