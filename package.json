@@ -1,16 +1,28 @@
 {
-  "name": "clase-3",
+  "name": "movies-rest-api",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "REST API for movies built with Node.js, Express and MySQL (clean MVC architecture).",
+  "main": "src/server.mjs",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
+    "start": "node src/server.mjs",
+    "dev": "node --watch src/server.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "express",
+    "mysql",
+    "rest-api",
+    "mvc",
+    "nodejs"
+  ],
+  "author": "Hector",
   "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
+    "dotenv": "^16.6.1",
     "express": "^5.2.1",
     "mysql2": "^3.17.1",
     "zod": "4.3.6"
