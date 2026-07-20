@@ -13,13 +13,14 @@ export class MovieController {
   // Los métodos flecha mantienen `this` atado al pasarlos como referencia de ruta.
 
   getAll = async (req, res) => {
-    const { page, limit, genre, sort } = req.query;
+    const { page, limit, genre, sort, q } = req.query;
 
     const { data, total } = await this.movieModel.getAll({
       page,
       limit,
       genre,
       sort,
+      q,
     });
 
     // La metadata de paginación viaja en cabeceras para que el cuerpo siga

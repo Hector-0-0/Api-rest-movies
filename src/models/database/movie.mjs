@@ -33,15 +33,16 @@ const MOVIE_COLUMNS = `
 
 export class MovieModel {
   /**
-   * Lista películas con paginación, filtro por género y orden.
+   * Lista películas con paginación, búsqueda, filtro por género y orden.
    * @param {Object} options
    * @param {string} [options.genre] - Filtra por nombre de género.
+   * @param {string} [options.q] - Búsqueda parcial sobre el título.
    * @param {number} [options.page=1]
    * @param {number} [options.limit=10]
    * @param {string} [options.sort] - Campo de orden; prefijo "-" = descendente.
    * @returns {Promise<{ data: Array, total: number }>}
    */
-  static async getAll({ genre, page = 1, limit = 10, sort } = {}) {
+  static async getAll({ genre, q, page = 1, limit = 10, sort } = {}) {
     try {
       const offset = (page - 1) * limit;
 
@@ -55,8 +56,8 @@ export class MovieModel {
         }
       }
 
-      // Recogemos el filtro en una lista para mantener correcta la numeración
-      // de los placeholders.
+      // Recogemos los filtros para que género y búsqueda se puedan combinar,
+      // manteniendo correcta la numeración de los placeholders en cada caso.
       const conditions = [];
       const filterParams = [];
 
@@ -69,6 +70,13 @@ export class MovieModel {
           JOIN genre g ON g.id = mg.genre_id
           WHERE mg.movie_id = m.id AND LOWER(g.name) = LOWER($${filterParams.length})
         )`);
+      }
+
+      if (q) {
+        // Escapamos los comodines de LIKE para que buscar "%" busque un signo
+        // de porcentaje literal en vez de devolver todas las filas.
+        filterParams.push(`%${q.replace(/[\\%_]/g, "\\$&")}%`);
+        conditions.push(`m.title ILIKE $${filterParams.length}`);
       }
 
       const where = conditions.length

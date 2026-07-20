@@ -61,6 +61,15 @@ export const listMoviesQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(10),
   genre: z.enum(GENRES).optional(),
+  // Búsqueda libre sobre el título (sin distinguir mayúsculas, parcial).
+  // Un valor vacío se trata como "sin búsqueda" en vez de error de validación,
+  // así una UI puede mandar `q=` siempre.
+  q: z
+    .string()
+    .trim()
+    .max(100)
+    .optional()
+    .transform((value) => value || undefined),
   // Ordena por un campo de la whitelist; el prefijo "-" es descendente (p. ej. -rate).
   sort: z
     .string()

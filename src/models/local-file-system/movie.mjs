@@ -18,12 +18,21 @@ export class MovieModel {
     movies = structuredClone(seed);
   }
 
-  static async getAll({ genre, page = 1, limit = 10, sort } = {}) {
+  static async getAll({ genre, q, page = 1, limit = 10, sort } = {}) {
     let result = movies;
 
     if (genre) {
       result = result.filter((movie) =>
         movie.genre?.some((g) => g.toLowerCase() === genre.toLowerCase()),
+      );
+    }
+
+    if (q) {
+      // Coincidencia simple de subcadena: refleja el ILIKE escapado del modelo
+      // de base de datos, donde los comodines son caracteres literales.
+      const needle = q.toLowerCase();
+      result = result.filter((movie) =>
+        movie.title.toLowerCase().includes(needle),
       );
     }
 

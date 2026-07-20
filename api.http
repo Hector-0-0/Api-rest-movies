@@ -40,6 +40,9 @@ GET {{host}}/movies
 ### Listar con paginación, filtro por género y orden (-rate = descendente)
 GET {{host}}/movies?page=1&limit=5&genre=Action&sort=-rate
 
+### Buscar por título (parcial, sin distinguir mayúsculas); se combina con los filtros
+GET {{host}}/movies?q=the&genre=Sci-Fi&sort=-rate
+
 ### Obtener una película por id (reemplaza por un UUID real)
 GET {{host}}/movies/5ad1a235-0d9c-410a-b32b-220d91689a08
 

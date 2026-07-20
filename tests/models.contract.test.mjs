@@ -97,6 +97,59 @@ const describeContract = (label, ctx) => {
       }
     });
 
+    it("searches titles case-insensitively on a partial match", async () => {
+      const { data, total } = await MovieModel.getAll({
+        q: "the lord",
+        page: 1,
+        limit: 100,
+      });
+
+      expect(total).toBe(1);
+      expect(data[0].title).toBe("The Lord of the Rings: The Return of the King");
+    });
+
+    it("returns an empty page when the search matches nothing", async () => {
+      const { data, total } = await MovieModel.getAll({
+        q: "zzzz-no-such-movie",
+        page: 1,
+        limit: 100,
+      });
+
+      expect(total).toBe(0);
+      expect(data).toEqual([]);
+    });
+
+    // Un "%" suelto es comodín de LIKE: sin escapar coincidiría con todas las
+    // filas en la base y con ninguna en memoria, una divergencia silenciosa.
+    it("treats LIKE wildcards in the search as literal characters", async () => {
+      for (const wildcard of ["%", "_"]) {
+        const { total } = await MovieModel.getAll({
+          q: wildcard,
+          page: 1,
+          limit: 100,
+        });
+        expect(total).toBe(0);
+      }
+    });
+
+    it("combines the search with the genre filter", async () => {
+      const { data, total } = await MovieModel.getAll({
+        q: "the",
+        genre: "Sci-Fi",
+        page: 1,
+        limit: 100,
+      });
+
+      expect(total).toBe(data.length);
+      for (const movie of data) {
+        expect(movie.title.toLowerCase()).toContain("the");
+        expect(movie.genre).toContain("Sci-Fi");
+      }
+      expect(data.map((m) => m.title)).toContain("The Matrix");
+      // Los filtros se intersecan, no se suman: Titanic contiene "the" pero no es Sci-Fi.
+      expect(data.map((m) => m.title)).not.toContain("Titanic");
+    });
+
     it("sorts by a whitelisted field descending", async () => {
       const { data } = await MovieModel.getAll({
         sort: "-rate",

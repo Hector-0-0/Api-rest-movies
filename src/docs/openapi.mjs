@@ -164,6 +164,13 @@ export const openapiSpec = {
           { name: "limit", in: "query", schema: { type: "integer", default: 10, minimum: 1, maximum: 100 } },
           { name: "genre", in: "query", schema: { type: "string", enum: GENRES } },
           {
+            name: "q",
+            in: "query",
+            description:
+              "Case-insensitive partial match on the title. Wildcards are treated literally.",
+            schema: { type: "string", maxLength: 100, example: "matrix" },
+          },
+          {
             name: "sort",
             in: "query",
             description: `Field to sort by; prefix with "-" for descending. One of: ${SORTABLE_FIELDS.join(", ")}.`,
