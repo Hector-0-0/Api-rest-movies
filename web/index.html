@@ -3,102 +3,698 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Movies API</title>
+    <title>Movies API — Demo client</title>
     <style>
-        /* Estilos básicos para mostrar las películas en una cuadrícula flexible */
+        :root {
+            --bg: #0f1115;
+            --surface: #181b22;
+            --surface-2: #21252e;
+            --border: #2c313c;
+            --text: #e7e9ee;
+            --muted: #9aa3b2;
+            --accent: #4f8cff;
+            --danger: #ff5f56;
+            --ok: #3fb950;
+            --star: #f0c14b;
+        }
+
+        * { box-sizing: border-box; }
+
         body {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            font-family: system-ui, -apple-system, sans-serif;
-            background-color: #f0f0f0;
-            padding: 20px;
+            margin: 0;
+            padding: 2rem 1.5rem 4rem;
+            font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
         }
-        /* Estilo de la tarjeta de cada película */
-        article {
-            border: 1px solid #ccc;
+
+        .wrap { max-width: 1180px; margin: 0 auto; }
+
+        h1 { margin: 0 0 .25rem; font-size: 1.5rem; letter-spacing: -.01em; }
+        .subtitle { margin: 0 0 1.5rem; color: var(--muted); font-size: .9rem; }
+
+        .panel {
             padding: 1rem;
-            width: 200px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            text-align: center;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 1rem;
         }
-        /* Aseguramos que las imágenes no se salgan de la tarjeta */
-        img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 4px;
+
+        .row { display: flex; flex-wrap: wrap; gap: .75rem; align-items: flex-end; }
+
+        .field { display: flex; flex-direction: column; gap: .3rem; }
+        .field label {
+            font-size: .7rem;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--muted);
         }
+        .field.grow { flex: 1; min-width: 160px; }
+
+        input, select {
+            padding: .5rem .7rem;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: .875rem;
+            font-family: inherit;
+            width: 100%;
+        }
+        input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
         button {
+            padding: .5rem .9rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--surface-2);
+            color: var(--text);
+            font-size: .875rem;
+            font-family: inherit;
             cursor: pointer;
-            background-color: #ff4444;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 4px;
+            white-space: nowrap;
+        }
+        button:hover:not(:disabled) { border-color: var(--accent); }
+        button:disabled { opacity: .4; cursor: not-allowed; }
+        button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 500; }
+        button.danger { color: var(--danger); }
+        button.danger:hover:not(:disabled) { background: var(--danger); border-color: var(--danger); color: #fff; }
+        button.small { padding: .3rem .6rem; font-size: .78rem; }
+
+        .auth-state { display: flex; align-items: center; gap: .6rem; font-size: .85rem; }
+        .badge {
+            font-size: .68rem;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            padding: .15rem .5rem;
+            border-radius: 99px;
+            border: 1px solid var(--border);
+            color: var(--muted);
+        }
+        .badge.admin { color: var(--ok); border-color: var(--ok); }
+
+        #status {
+            min-height: 1.5rem;
+            margin: 0 0 1rem;
+            font-size: .85rem;
+            font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        }
+        #status.error { color: var(--danger); }
+        #status.ok { color: var(--ok); }
+        #status.busy { color: var(--muted); }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+            gap: 1.25rem;
+        }
+
+        article {
+            display: flex;
+            flex-direction: column;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        article img {
+            width: 100%;
+            aspect-ratio: 2 / 3;
+            object-fit: cover;
+            background: var(--surface-2);
+        }
+
+        .card-body { padding: .8rem; display: flex; flex-direction: column; gap: .5rem; flex: 1; }
+        .card-body h2 { margin: 0; font-size: .95rem; line-height: 1.3; }
+        .meta { color: var(--muted); font-size: .8rem; margin: 0; }
+        .rate { color: var(--star); font-weight: 600; }
+
+        .genres { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: auto; padding-top: .3rem; }
+        .genre {
+            font-size: .68rem;
+            padding: .12rem .45rem;
+            border: 1px solid var(--border);
+            border-radius: 99px;
+            color: var(--muted);
+        }
+
+        .card-actions { display: flex; gap: .4rem; }
+        .card-actions button { flex: 1; }
+
+        .pagination { display: flex; align-items: center; justify-content: center; gap: .75rem; margin-top: 2rem; }
+        .pagination span { color: var(--muted); font-size: .85rem; }
+
+        .empty { text-align: center; padding: 3rem 1rem; color: var(--muted); }
+
+        /* Modal que sirve tanto para crear como para editar una película. */
+        dialog {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--surface);
+            color: var(--text);
+            padding: 0;
+            width: min(560px, calc(100vw - 2rem));
+        }
+        dialog::backdrop { background: rgba(0, 0, 0, .6); }
+        .dialog-head {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+        }
+        .dialog-body { padding: 1.25rem; display: grid; grid-template-columns: 1fr 1fr; gap: .85rem; }
+        .dialog-body .full { grid-column: 1 / -1; }
+        .dialog-foot {
+            padding: 1rem 1.25rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: .5rem;
+        }
+        .checks { display: flex; flex-wrap: wrap; gap: .4rem; }
+        .checks label {
+            display: flex;
+            align-items: center;
+            gap: .3rem;
+            font-size: .78rem;
+            padding: .25rem .55rem;
+            border: 1px solid var(--border);
+            border-radius: 99px;
+            cursor: pointer;
+            text-transform: none;
+            letter-spacing: 0;
+            color: var(--text);
+        }
+        .checks input { width: auto; }
+        .form-error { color: var(--danger); font-size: .8rem; min-height: 1.2rem; margin: 0; }
+
+        @media (max-width: 560px) {
+            .dialog-body { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
-    <script type="module">
-    /**
-     * Petición inicial (GET): Obtenemos todas las películas del servidor
-     */
-    fetch('https://rainy-bettine-hector0-0-1de8c0b3.koyeb.app/movies')
-        .then(res => res.json()) // Convertimos la respuesta a JSON
-        .then(movies => {
-            // Generamos el HTML dinámicamente usando .map()
-            const html = movies.map(movie => {
-                return `
-                    <article data-id="${movie.id}">
-                        <h2>${movie.title}</h2>
-                        <img src="${movie.poster}" alt="${movie.title} poster"> 
-                        <p>(${movie.year})</p>
-                        <button data-id="${movie.id}" class="delete-btn">Delete</button>
-                    </article>`;
-            }).join(''); // Unimos el array en un solo string
+<div class="wrap">
+    <h1>🎬 Movies API — demo client</h1>
+    <p class="subtitle">
+        A dependency-free page exercising every endpoint of the API.
+        Reads are public; creating, editing and deleting require an admin token.
+    </p>
 
-            // Insertamos todas las películas en el body
-            document.querySelector('body').innerHTML = html;
+    <!-- Conexión y autenticación -->
+    <div class="panel">
+        <div class="row">
+            <div class="field grow">
+                <label for="api-url">API base URL</label>
+                <input id="api-url" type="url">
+            </div>
+            <div class="field">
+                <label for="email">Email</label>
+                <input id="email" type="email" value="admin@example.com">
+            </div>
+            <div class="field">
+                <label for="password">Password</label>
+                <input id="password" type="password" value="admin12345">
+            </div>
+            <button id="login" class="primary" type="button">Log in</button>
+            <button id="register" type="button">Register</button>
+        </div>
+        <div class="row" id="session" style="margin-top:.85rem; display:none">
+            <div class="auth-state">
+                <span id="session-email"></span>
+                <span class="badge" id="session-role"></span>
+                <button id="logout" class="small" type="button">Log out</button>
+            </div>
+        </div>
+    </div>
 
-            /**
-             * Lógica de eliminación:
-             * Seleccionamos todos los botones creados y les añadimos el evento click
-             */
-            const botones = document.querySelectorAll('.delete-btn');
-            botones.forEach(boton => {
-                boton.addEventListener('click', eliminar);
-            });
+    <!-- Búsqueda, filtro y orden -->
+    <div class="panel">
+        <div class="row">
+            <div class="field grow">
+                <label for="search">Search by title</label>
+                <input id="search" type="search" placeholder="e.g. matrix">
+            </div>
+            <div class="field">
+                <label for="genre">Genre</label>
+                <select id="genre"><option value="">All genres</option></select>
+            </div>
+            <div class="field">
+                <label for="sort">Sort</label>
+                <select id="sort">
+                    <option value="">Default</option>
+                    <option value="-rate">Rating ↓</option>
+                    <option value="rate">Rating ↑</option>
+                    <option value="-year">Year ↓</option>
+                    <option value="year">Year ↑</option>
+                    <option value="title">Title A–Z</option>
+                    <option value="-duration">Longest</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="limit">Per page</label>
+                <select id="limit">
+                    <option>8</option><option selected>12</option><option>24</option>
+                </select>
+            </div>
+            <button id="new-movie" class="primary" type="button" disabled>+ New movie</button>
+        </div>
+    </div>
 
-            /**
-             * Función para borrar una película
-             */
-            function eliminar(event) {
-                // Recuperamos el ID desde el atributo data del botón pulsado
-                const id = event.target.dataset.id;
+    <p id="status"></p>
+    <main id="movies" class="grid"></main>
 
-                // Enviamos la petición DELETE al servidor para el ID específico
-                fetch(`https://rainy-bettine-hector0-0-1de8c0b3.koyeb.app/movies/${id}`, {
-                    method: 'DELETE'
-                })
-                .then(res => {
-                    /**
-                     * IMPORTANTE: Si el servidor responde con éxito (res.ok),
-                     * eliminamos la tarjeta del HTML sin necesidad de recargar la página.
-                     */
-                    if (res.ok) {
-                        const articleToRemove = document.querySelector(`article[data-id="${id}"]`);
-                        articleToRemove.remove();
-                        console.log(`Pelicula ${id} eliminada correctamente`);
-                    } else {
-                        console.error('El servidor no permitió eliminar la película');
-                    }
-                })
-                .catch(err => console.error('Error de red al intentar borrar:', err));
-            }
+    <div class="pagination" id="pagination" style="display:none">
+        <button id="prev" type="button">← Prev</button>
+        <span id="page-info"></span>
+        <button id="next" type="button">Next →</button>
+    </div>
+</div>
+
+<!-- Un mismo diálogo sirve para crear y editar; el modo decide verbo y URL. -->
+<dialog id="movie-dialog">
+    <form id="movie-form" method="dialog">
+        <div class="dialog-head" id="dialog-title">New movie</div>
+        <div class="dialog-body">
+            <div class="field full">
+                <label for="f-title">Title</label>
+                <input id="f-title" required maxlength="255">
+            </div>
+            <div class="field">
+                <label for="f-year">Year</label>
+                <input id="f-year" type="number" required min="1900">
+            </div>
+            <div class="field">
+                <label for="f-duration">Duration (min)</label>
+                <input id="f-duration" type="number" required min="1">
+            </div>
+            <div class="field">
+                <label for="f-director">Director</label>
+                <input id="f-director" required>
+            </div>
+            <div class="field">
+                <label for="f-rate">Rating (0–10)</label>
+                <input id="f-rate" type="number" step="0.1" min="0" max="10">
+            </div>
+            <div class="field full">
+                <label for="f-poster">Poster URL</label>
+                <input id="f-poster" type="url" required placeholder="https://…">
+            </div>
+            <div class="field full">
+                <label>Genres</label>
+                <div class="checks" id="f-genres"></div>
+            </div>
+            <p class="form-error full" id="form-error"></p>
+        </div>
+        <div class="dialog-foot">
+            <button type="button" id="dialog-cancel">Cancel</button>
+            <button type="submit" class="primary" id="dialog-save">Save</button>
+        </div>
+    </form>
+</dialog>
+
+<script type="module">
+// ---------------------------------------------------------------------------
+// Configuración
+// ---------------------------------------------------------------------------
+
+// Los géneros deben coincidir con la whitelist GENRES de src/schemas/movies.mjs.
+const GENRES = [
+    "Action", "Adventure", "Animation", "Biography", "Crime",
+    "Comedy", "Drama", "Fantasy", "Horror", "Sci-Fi", "Romance",
+];
+
+const STORAGE_KEY = "movies-api-url";
+
+const $ = (selector) => document.querySelector(selector);
+
+// En desarrollo esta página la sirve un servidor estático (p. ej. el 8080) y la
+// API vive en otro puerto; ya desplegada, la API sirve la página desde el mismo
+// origen. El valor por defecto contempla ambos casos y el campo lo puede cambiar.
+const defaultApiUrl = () => {
+    const { hostname, origin } = window.location;
+    return hostname === "localhost" || hostname === "127.0.0.1"
+        ? "http://localhost:3000"
+        : origin.replace(/\/$/, "");
+};
+
+// ---------------------------------------------------------------------------
+// Estado
+// ---------------------------------------------------------------------------
+
+// El token se guarda solo en memoria a propósito: un JWT en localStorage queda
+// expuesto a cualquier XSS de la página. El coste es volver a entrar al recargar.
+let session = null;          // { token, email, role }
+let page = 1;
+let totalPages = 1;
+let editingId = null;        // null => el diálogo está creando
+
+const isAdmin = () => session?.role === "admin";
+
+// ---------------------------------------------------------------------------
+// Utilidades
+// ---------------------------------------------------------------------------
+
+const apiUrl = () => $("#api-url").value.trim().replace(/\/$/, "");
+
+const setStatus = (message, kind = "") => {
+    $("#status").textContent = message;
+    $("#status").className = kind;
+};
+
+const escapeHtml = (value) =>
+    String(value).replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    })[char]);
+
+/**
+ * Lee el formato de error consistente de la API ({ status, code, message,
+ * details? }) para mostrar un motivo real. Los errores de Zod llegan en
+ * `details` como pares { field, message }, mucho más útiles que el resumen.
+ */
+const errorMessage = async (response) => {
+    try {
+        const body = await response.json();
+        if (Array.isArray(body.details) && body.details.length > 0) {
+            return body.details.map((d) => `${d.field}: ${d.message}`).join(" · ");
         }
-    )
-    </script>
+        return body.message ?? `HTTP ${response.status}`;
+    } catch {
+        return `HTTP ${response.status}`;
+    }
+};
+
+/** Envoltorio de fetch que adjunta el token y normaliza los errores de red. */
+const api = async (path, options = {}) => {
+    const headers = { ...options.headers };
+    if (options.body) headers["Content-Type"] = "application/json";
+    if (session) headers.Authorization = `Bearer ${session.token}`;
+
+    try {
+        return await fetch(`${apiUrl()}${path}`, { ...options, headers });
+    } catch {
+        throw new Error(`Network error — is the API running at ${apiUrl()}?`);
+    }
+};
+
+/** Ejecuta `task` y reporta en la línea de estado cualquier error de red. */
+const guard = async (task) => {
+    try {
+        await task();
+    } catch (error) {
+        setStatus(error.message, "error");
+    }
+};
+
+// ---------------------------------------------------------------------------
+// Renderizado
+// ---------------------------------------------------------------------------
+
+const movieCard = (movie) => `
+    <article data-id="${escapeHtml(movie.id)}">
+        <img src="${escapeHtml(movie.poster ?? "")}"
+             alt="${escapeHtml(movie.title)} poster"
+             loading="lazy"
+             onerror="this.style.visibility='hidden'">
+        <div class="card-body">
+            <h2>${escapeHtml(movie.title)}</h2>
+            <p class="meta">
+                ${escapeHtml(movie.year)} · ${escapeHtml(movie.duration)} min
+                · <span class="rate">★ ${escapeHtml(movie.rate)}</span>
+            </p>
+            <p class="meta">${escapeHtml(movie.director)}</p>
+            <div class="genres">
+                ${(movie.genre ?? [])
+                    .map((g) => `<span class="genre">${escapeHtml(g)}</span>`)
+                    .join("")}
+            </div>
+            ${isAdmin() ? `
+                <div class="card-actions">
+                    <button class="small edit-btn" data-id="${escapeHtml(movie.id)}" type="button">Edit</button>
+                    <button class="small danger delete-btn" data-id="${escapeHtml(movie.id)}" type="button">Delete</button>
+                </div>` : ""}
+        </div>
+    </article>`;
+
+const render = (movies) => {
+    const container = $("#movies");
+
+    if (movies.length === 0) {
+        container.innerHTML = `<p class="empty full">No movies match these filters.</p>`;
+        $("#pagination").style.display = "none";
+        return;
+    }
+
+    container.innerHTML = movies.map(movieCard).join("");
+
+    // Las acciones de escritura solo existen para admin, así que los listeners
+    // se enganchan solo si el marcado los pintó.
+    for (const button of container.querySelectorAll(".delete-btn")) {
+        button.addEventListener("click", (e) => onDelete(e.target.dataset.id));
+    }
+    for (const button of container.querySelectorAll(".edit-btn")) {
+        button.addEventListener("click", (e) => openDialog(e.target.dataset.id));
+    }
+};
+
+const renderSession = () => {
+    const panel = $("#session");
+
+    if (!session) {
+        panel.style.display = "none";
+        $("#new-movie").disabled = true;
+        $("#login").style.display = "";
+        $("#register").style.display = "";
+        return;
+    }
+
+    panel.style.display = "";
+    $("#session-email").textContent = session.email;
+    $("#session-role").textContent = session.role;
+    $("#session-role").className = `badge ${session.role === "admin" ? "admin" : ""}`;
+    // Solo admin puede escribir: un `user` logueado sigue sin poder crear.
+    $("#new-movie").disabled = !isAdmin();
+    $("#login").style.display = "none";
+    $("#register").style.display = "none";
+};
+
+// ---------------------------------------------------------------------------
+// Carga de datos
+// ---------------------------------------------------------------------------
+
+/**
+ * Recarga la cuadrícula. `notice` lleva el mensaje de lo que disparó la recarga
+ * (p. ej. "Movie created.") y se antepone al recuento: si no, el recuento
+ * pisaría de inmediato la confirmación que el usuario necesita ver.
+ */
+const loadMovies = async ({ notice } = {}) => {
+    localStorage.setItem(STORAGE_KEY, apiUrl());
+    setStatus("Loading movies…", "busy");
+
+    const params = new URLSearchParams({ page, limit: $("#limit").value });
+    if ($("#search").value.trim()) params.set("q", $("#search").value.trim());
+    if ($("#genre").value) params.set("genre", $("#genre").value);
+    if ($("#sort").value) params.set("sort", $("#sort").value);
+
+    const response = await api(`/movies?${params}`);
+    if (!response.ok) {
+        setStatus(`Could not load movies: ${await errorMessage(response)}`, "error");
+        return;
+    }
+
+    const movies = await response.json();
+    render(movies);
+
+    // La metadata de paginación viaja en cabeceras, no en el cuerpo.
+    const total = Number(response.headers.get("X-Total-Count") ?? movies.length);
+    totalPages = Number(response.headers.get("X-Total-Pages") ?? 1);
+
+    $("#pagination").style.display = totalPages > 1 ? "" : "none";
+    $("#page-info").textContent = `Page ${page} of ${totalPages}`;
+    $("#prev").disabled = page <= 1;
+    $("#next").disabled = page >= totalPages;
+
+    const count = `${total} movie${total === 1 ? "" : "s"} found.`;
+    setStatus(notice ? `${notice} ${count}` : count, "ok");
+};
+
+/** Cambiar un filtro vuelve a la página 1: quedarse en la 5 de 2 no muestra nada. */
+const resetAndLoad = () => guard(async () => {
+    page = 1;
+    await loadMovies();
+});
+
+// ---------------------------------------------------------------------------
+// Autenticación
+// ---------------------------------------------------------------------------
+
+const authenticate = async (path, label) => {
+    const email = $("#email").value;
+    const password = $("#password").value;
+
+    setStatus(`${label}…`, "busy");
+    const response = await api(path, {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+    });
+
+    if (!response.ok) {
+        session = null;
+        renderSession();
+        setStatus(`${label} failed: ${await errorMessage(response)}`, "error");
+        return;
+    }
+
+    const body = await response.json();
+    session = { token: body.token, email: body.user.email, role: body.user.role };
+    renderSession();
+
+    // Recargamos para que aparezcan los botones de admin en cada tarjeta.
+    await loadMovies({
+        notice: `Signed in as ${session.email} (${session.role}).`,
+    });
+};
+
+// ---------------------------------------------------------------------------
+// Operaciones de escritura
+// ---------------------------------------------------------------------------
+
+const openDialog = async (id = null) => {
+    editingId = id;
+    $("#form-error").textContent = "";
+    $("#dialog-title").textContent = id ? "Edit movie" : "New movie";
+
+    // Los checkboxes salen de la misma whitelist contra la que valida la API.
+    $("#f-genres").innerHTML = GENRES.map((genre) => `
+        <label><input type="checkbox" value="${genre}"> ${genre}</label>
+    `).join("");
+
+    if (id) {
+        const response = await api(`/movies/${id}`);
+        if (!response.ok) {
+            setStatus(`Could not load that movie: ${await errorMessage(response)}`, "error");
+            return;
+        }
+        const movie = await response.json();
+        $("#f-title").value = movie.title;
+        $("#f-year").value = movie.year;
+        $("#f-duration").value = movie.duration;
+        $("#f-director").value = movie.director;
+        $("#f-rate").value = movie.rate;
+        $("#f-poster").value = movie.poster ?? "";
+        for (const box of $("#f-genres").querySelectorAll("input")) {
+            box.checked = (movie.genre ?? []).includes(box.value);
+        }
+    } else {
+        $("#movie-form").reset();
+    }
+
+    $("#movie-dialog").showModal();
+};
+
+const saveMovie = async (event) => {
+    event.preventDefault();
+
+    const genre = [...$("#f-genres").querySelectorAll("input:checked")].map((b) => b.value);
+    if (genre.length === 0) {
+        $("#form-error").textContent = "Pick at least one genre.";
+        return;
+    }
+
+    // Los números se envían como números: el esquema Zod rechaza strings numéricos.
+    const payload = {
+        title: $("#f-title").value.trim(),
+        year: Number($("#f-year").value),
+        duration: Number($("#f-duration").value),
+        director: $("#f-director").value.trim(),
+        poster: $("#f-poster").value.trim(),
+        genre,
+    };
+    if ($("#f-rate").value !== "") payload.rate = Number($("#f-rate").value);
+
+    $("#dialog-save").disabled = true;
+    try {
+        const response = await api(
+            editingId ? `/movies/${editingId}` : "/movies",
+            {
+                method: editingId ? "PATCH" : "POST",
+                body: JSON.stringify(payload),
+            },
+        );
+
+        if (!response.ok) {
+            $("#form-error").textContent = await errorMessage(response);
+            return;
+        }
+
+        const notice = editingId ? "Movie updated." : "Movie created.";
+        $("#movie-dialog").close();
+        await loadMovies({ notice });
+    } catch (error) {
+        $("#form-error").textContent = error.message;
+    } finally {
+        $("#dialog-save").disabled = false;
+    }
+};
+
+const onDelete = (id) => guard(async () => {
+    setStatus(`Deleting ${id}…`, "busy");
+
+    const response = await api(`/movies/${id}`, { method: "DELETE" });
+    if (!response.ok) {
+        setStatus(`Delete failed: ${await errorMessage(response)}`, "error");
+        return;
+    }
+
+    // Recargamos en vez de solo quitar la tarjeta, para que la paginación no mienta.
+    await loadMovies({ notice: "Movie deleted." });
+});
+
+// ---------------------------------------------------------------------------
+// Enganche de eventos
+// ---------------------------------------------------------------------------
+
+$("#api-url").value = localStorage.getItem(STORAGE_KEY) ?? defaultApiUrl();
+$("#genre").innerHTML +=
+    GENRES.map((g) => `<option value="${g}">${g}</option>`).join("");
+
+$("#login").addEventListener("click", () =>
+    guard(() => authenticate("/auth/login", "Login")));
+$("#register").addEventListener("click", () =>
+    guard(() => authenticate("/auth/register", "Registration")));
+$("#logout").addEventListener("click", () => {
+    session = null;
+    renderSession();
+    setStatus("Signed out.", "");
+    guard(loadMovies);
+});
+
+// Con debounce para no lanzar una petición por cada tecla.
+let searchTimer;
+$("#search").addEventListener("input", () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(resetAndLoad, 300);
+});
+
+$("#genre").addEventListener("change", resetAndLoad);
+$("#sort").addEventListener("change", resetAndLoad);
+$("#limit").addEventListener("change", resetAndLoad);
+$("#api-url").addEventListener("change", resetAndLoad);
+
+$("#prev").addEventListener("click", () => guard(async () => {
+    if (page > 1) { page -= 1; await loadMovies(); }
+}));
+$("#next").addEventListener("click", () => guard(async () => {
+    if (page < totalPages) { page += 1; await loadMovies(); }
+}));
+
+$("#new-movie").addEventListener("click", () => guard(() => openDialog(null)));
+$("#movie-form").addEventListener("submit", saveMovie);
+$("#dialog-cancel").addEventListener("click", () => $("#movie-dialog").close());
+
+renderSession();
+guard(loadMovies);
+</script>
 </body>
 </html>
