@@ -141,11 +141,9 @@ See [`api.http`](./api.http) for a ready-to-run request collection (VS Code REST
 
 ### Demo client
 
-`web/index.html` is a dependency-free page that consumes the API. Open it with any static server and point the *API base URL* field at your API:
-
-```bash
-npx serve web        # then open http://localhost:3000 in the field
-```
+The API serves a dependency-free demo page (`web/index.html`) at its root, so
+running the server is enough — open http://localhost:3000 and it is there. The
+*API base URL* field lets you point it at a different backend.
 
 ### Tests
 
@@ -157,6 +155,27 @@ npm run lint
 ```
 
 `tests/models.contract.test.mjs` runs the same contract over both data backends. The PostgreSQL half is skipped unless `TEST_DATABASE_URL` is set, so the default `npm test` stays database-free while CI runs everything.
+
+## Demo
+
+Live at **https://api-rest-movies-1dhe.onrender.com**
+
+| | |
+| --- | --- |
+| Demo client | https://api-rest-movies-1dhe.onrender.com |
+| Interactive docs | https://api-rest-movies-1dhe.onrender.com/docs |
+| Health check | https://api-rest-movies-1dhe.onrender.com/health |
+
+Sign in with the seed admin (`admin@example.com` / `admin12345`) to enable
+creating, editing and deleting.
+
+> **First request may take up to a minute.** The API runs on Render's free
+> tier, which spins the service down after 15 minutes without traffic and
+> takes about a minute to wake it back up. Later requests are fast. The
+> database is on Neon, which also scales to zero but resumes in about a
+> second.
+
+Backend on [Render](https://render.com), PostgreSQL on [Neon](https://neon.tech).
 
 ## Project structure
 
