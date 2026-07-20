@@ -1,5 +1,5 @@
 // src/server.mjs
-// Entry point: builds the app with the MySQL model and starts listening.
+// Punto de entrada: monta la app con los modelos de PostgreSQL y se pone a escuchar.
 
 import { createApp } from "./app.mjs";
 import { config } from "./config/index.mjs";

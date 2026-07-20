@@ -1,24 +1,24 @@
-# Production image for the Movies REST API.
+# Imagen de producción de la Movies REST API.
 FROM node:20-alpine
 
-# App lives here.
+# Aquí vive la app.
 WORKDIR /app
 
-# Install only production dependencies first to leverage Docker layer caching.
+# Instalamos solo dependencias de producción primero, para aprovechar la caché de capas.
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
-# Copy the application source and the compatibility entry point.
+# Copiamos el código y el esquema (útil para sembrar una base nueva).
 COPY src ./src
-COPY server-with-mysql.mjs ./
+COPY schema.sql ./
 
-# Run as the unprivileged user that the base image already ships with.
+# Corremos con el usuario sin privilegios que ya trae la imagen base.
 USER node
 
 ENV NODE_ENV=production
 EXPOSE 3000
 
-# Lightweight health check against the /health endpoint.
+# Health check ligero contra el endpoint /health.
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD wget -qO- http://localhost:3000/health || exit 1
 

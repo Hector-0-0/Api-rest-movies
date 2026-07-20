@@ -1,29 +1,34 @@
 //schemas/movies.mjs
 
-// Zod schemas: the single source of truth for the shape of movie data and
-// of the query parameters accepted by the list endpoint.
+// Esquemas Zod: la única fuente de verdad sobre la forma de los datos de una
+// película y de los parámetros que acepta el endpoint de listado.
 import { z } from "zod";
 
-// Genres allowed across the API. Kept here so schema and DB seed stay aligned.
+// Géneros permitidos en toda la API. Viven aquí para que el esquema y la
+// semilla de la base no se desalineen: cada valor debe existir también en la
+// tabla `genre` que siembra schema.sql.
 export const GENRES = [
   "Action",
   "Adventure",
+  "Animation",
+  "Biography",
   "Crime",
   "Comedy",
   "Drama",
+  "Fantasy",
   "Horror",
   "Sci-Fi",
   "Romance",
 ];
 
-// Fields the list endpoint can be sorted by (whitelist prevents SQL injection
-// when the value is interpolated into an ORDER BY clause).
+// Campos por los que se puede ordenar el listado. La whitelist evita inyección
+// SQL cuando el valor se interpola dentro de un ORDER BY.
 export const SORTABLE_FIELDS = ["title", "year", "duration", "rate"];
 
 const currentYear = new Date().getFullYear();
 
 /**
- * movieSchema: the contract every movie must satisfy.
+ * movieSchema: el contrato que toda película debe cumplir.
  */
 export const movieSchema = z.object({
   title: z.string({ message: "Title must be a string" }).min(1),
@@ -48,15 +53,15 @@ export const movieSchema = z.object({
 });
 
 /**
- * listMoviesQuerySchema: validates and coerces the query string of
- * GET /movies. Strings from the URL are coerced to numbers and defaults
- * are applied so the controller always gets clean values.
+ * listMoviesQuerySchema: valida y convierte la query string de GET /movies.
+ * Los strings de la URL se convierten a número y se aplican valores por
+ * defecto, para que el controlador siempre reciba datos limpios.
  */
 export const listMoviesQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(10),
   genre: z.enum(GENRES).optional(),
-  // Sort by a whitelisted field; a leading "-" means descending (e.g. -rate).
+  // Ordena por un campo de la whitelist; el prefijo "-" es descendente (p. ej. -rate).
   sort: z
     .string()
     .optional()
@@ -71,7 +76,7 @@ export const listMoviesQuerySchema = z.object({
 });
 
 /**
- * Backwards-compatible helpers (still used by the in-memory model/tests).
+ * Helpers de compatibilidad (los siguen usando el modelo en memoria y los tests).
  */
 export function validateMovie(input) {
   return movieSchema.safeParse(input);

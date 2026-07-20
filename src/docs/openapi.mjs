@@ -1,6 +1,6 @@
 // docs/openapi.mjs
-// Hand-written OpenAPI 3.0 spec describing the public API. Kept as a plain JS
-// object (no build step) and served by swagger-ui-express at /docs.
+// Especificación OpenAPI 3.0 escrita a mano que describe la API pública. Es un
+// objeto JS plano (sin paso de build) que swagger-ui-express sirve en /docs.
 import { GENRES, SORTABLE_FIELDS } from "../schemas/movies.mjs";
 
 const errorSchema = {
@@ -38,7 +38,7 @@ export const openapiSpec = {
     title: "Movies REST API",
     version: "1.0.0",
     description:
-      "REST API for movies (Node.js + Express + MySQL). Reads are public; " +
+      "REST API for movies (Node.js + Express + PostgreSQL). Reads are public; " +
       "creating, updating and deleting movies requires an admin JWT.",
   },
   servers: [{ url: "/", description: "Current host" }],

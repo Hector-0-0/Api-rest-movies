@@ -1,7 +1,7 @@
 // src/config/index.mjs
-// Centralized application configuration loaded from environment variables.
-// Keeping every env access in one place makes the rest of the codebase
-// free of `process.env` lookups and easy to test.
+// Configuración centralizada, cargada desde variables de entorno. Tener todos
+// los accesos a env en un solo sitio deja el resto del código libre de
+// `process.env` y más fácil de testear.
 
 import "dotenv/config";
 
@@ -15,25 +15,32 @@ export const config = {
   env: process.env.NODE_ENV ?? "development",
   port: Number(process.env.PORT ?? 3000),
 
-  // Comma-separated whitelist, e.g. "http://localhost:3000,https://foo.vercel.app"
+  // Lista blanca separada por comas, p. ej. "http://localhost:3000,https://foo.vercel.app"
   corsOrigins: parseOrigins(process.env.CORS_ORIGINS),
 
   db: {
+    // Los proveedores gestionados (Neon, Render) exponen una única cadena de
+    // conexión. Si está presente, gana sobre las variables DB_* de abajo.
+    url: process.env.DATABASE_URL ?? null,
+
     host: process.env.DB_HOST ?? "localhost",
-    user: process.env.DB_USER ?? "root",
-    password: process.env.DB_PASSWORD ?? "",
+    user: process.env.DB_USER ?? "postgres",
+    password: process.env.DB_PASSWORD ?? "postgres",
     database: process.env.DB_NAME ?? "moviesdb",
-    port: Number(process.env.DB_PORT ?? 3306),
-    // Aiven (and most managed MySQL) require TLS. Enable with DB_SSL=true.
-    ssl: process.env.DB_SSL === "true",
+    port: Number(process.env.DB_PORT ?? 5432),
+    // Neon y Render exigen TLS. Se activa con DB_SSL=true, o implícitamente si
+    // la cadena de conexión contiene `sslmode=require`.
+    ssl:
+      process.env.DB_SSL === "true" ||
+      (process.env.DATABASE_URL ?? "").includes("sslmode=require"),
   },
 
   auth: {
-    // Secret used to sign/verify JWTs. MUST be overridden in production via env.
+    // Secreto para firmar y verificar JWTs. DEBE sobreescribirse en producción.
     jwtSecret: process.env.JWT_SECRET ?? "dev-only-insecure-secret-change-me",
-    // Token lifetime accepted by jsonwebtoken (e.g. "1h", "7d").
+    // Vida del token, en el formato que acepta jsonwebtoken (p. ej. "1h", "7d").
     jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? "1d",
-    // bcrypt cost factor (higher = slower = safer).
+    // Factor de coste de bcrypt (más alto = más lento = más seguro).
     bcryptRounds: Number(process.env.BCRYPT_ROUNDS ?? 10),
   },
 };

@@ -1,46 +1,48 @@
 // models/database/user.mjs
-// Persistence for users. Mirrors the movie model conventions: UUIDs stored as
-// BINARY(16) and exposed as text via BIN_TO_UUID. Passwords are stored only as
-// bcrypt hashes — this layer never deals with plaintext.
-import { pool as connection } from "../../db/connection.mjs";
+// Persistencia de usuarios en PostgreSQL. Los ids son columnas uuid nativas y
+// las contraseñas se guardan solo como hash bcrypt: aquí nunca circula texto plano.
+//
+// Los emails se comparan sin distinguir mayúsculas. La colación por defecto de
+// MySQL lo hacía sola; PostgreSQL compara texto tal cual, así que normalizamos
+// a minúsculas y lo respaldamos con un UNIQUE INDEX sobre LOWER(email)
+// (ver schema.sql). Sin esto, foo@x.com y Foo@x.com serían dos cuentas distintas.
+import { pool } from "../../db/connection.mjs";
 
 export class UserModel {
   /**
-   * Finds a user by email, including the password hash so the auth layer can
-   * verify credentials. Returns null when no user matches.
+   * Busca un usuario por email, incluyendo el hash para que la capa de auth
+   * pueda verificar credenciales. Devuelve null si no hay coincidencia.
    */
   static async findByEmail(email) {
     try {
-      const [rows] = await connection.query(
-        `SELECT BIN_TO_UUID(id) id, email, password_hash, role
-         FROM users WHERE email = ?`,
+      const { rows } = await pool.query(
+        `SELECT id, email, password_hash, role
+         FROM users WHERE LOWER(email) = LOWER($1)`,
         [email],
       );
       return rows[0] ?? null;
     } catch (error) {
-      console.error("Database error in findByEmail:", error.message);
-      throw new Error("Error retrieving user from database", { cause: error });
+      console.error("Error de base de datos en findByEmail:", error.message);
+      throw new Error("Error al obtener el usuario", { cause: error });
     }
   }
 
   /**
-   * Creates a user from an already-hashed password. Returns the public view of
-   * the user (no password hash).
+   * Crea un usuario a partir de una contraseña ya hasheada. Devuelve la vista
+   * pública del usuario (sin el hash).
    */
   static async create({ email, passwordHash, role = "user" }) {
     try {
-      const [[{ uuid }]] = await connection.query("SELECT UUID() AS uuid");
-
-      await connection.query(
-        `INSERT INTO users (id, email, password_hash, role)
-         VALUES (UUID_TO_BIN(?), ?, ?, ?)`,
-        [uuid, email, passwordHash, role],
+      const { rows } = await pool.query(
+        `INSERT INTO users (email, password_hash, role)
+         VALUES (LOWER($1), $2, $3)
+         RETURNING id, email, role`,
+        [email, passwordHash, role],
       );
-
-      return { id: uuid, email, role };
+      return rows[0];
     } catch (error) {
-      console.error("Database error in create user:", error.message);
-      throw new Error("Error creating user in database", { cause: error });
+      console.error("Error de base de datos al crear usuario:", error.message);
+      throw new Error("Error al crear el usuario", { cause: error });
     }
   }
 }

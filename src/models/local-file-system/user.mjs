@@ -1,24 +1,27 @@
 // models/local-file-system/user.mjs
-// In-memory user store mirroring the MySQL model's contract. Used for local
-// runs without a database and as an isolated backend for tests.
+// Almacén de usuarios en memoria que replica el contrato del modelo de
+// PostgreSQL. Se usa en local sin base de datos y como backend para los tests.
 import crypto from "node:crypto";
 
 let users = [];
 
 export class UserModel {
-  /** Clears the store (handy between tests). */
+  /** Vacía el almacén (útil entre tests). */
   static reset() {
     users = [];
   }
 
+  // Los emails se guardan y comparan en minúsculas, igual que el modelo de
+  // PostgreSQL y su UNIQUE INDEX sobre LOWER(email).
   static async findByEmail(email) {
-    return users.find((user) => user.email === email) ?? null;
+    const needle = email.toLowerCase();
+    return users.find((user) => user.email === needle) ?? null;
   }
 
   static async create({ email, passwordHash, role = "user" }) {
     const user = {
       id: crypto.randomUUID(),
-      email,
+      email: email.toLowerCase(),
       password_hash: passwordHash,
       role,
     };

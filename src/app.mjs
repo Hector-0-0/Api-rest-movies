@@ -1,7 +1,7 @@
 // src/app.mjs
-// Builds and configures the Express application. It does NOT start the
-// server: keeping app definition separate from `listen()` lets tests
-// import the app and run it with Supertest without opening a port.
+// Construye y configura la aplicación Express. NO arranca el servidor: separar
+// la definición de la app del `listen()` permite que los tests la importen y la
+// ejecuten con Supertest sin abrir un puerto.
 
 import express from "express";
 import helmet from "helmet";
@@ -14,59 +14,60 @@ import { apiRateLimiter } from "./middlewares/rate-limit.mjs";
 import { notFoundHandler, errorHandler } from "./middlewares/error-handler.mjs";
 
 /**
- * createApp: factory that wires middlewares and routes around injected
- * data models, so the same app can run against MySQL or in-memory models.
+ * createApp: factory que monta middlewares y rutas alrededor de los modelos
+ * inyectados, para que la misma app corra contra PostgreSQL o contra memoria.
  *
  * @param {Object} deps
- * @param {Object} deps.movieModel - Data model implementing the movie CRUD.
- * @param {Object} deps.userModel - Data model implementing user persistence.
+ * @param {Object} deps.movieModel - Modelo que implementa el CRUD de películas.
+ * @param {Object} deps.userModel - Modelo que implementa la persistencia de usuarios.
  * @returns {import("express").Express}
  */
 export const createApp = ({ movieModel, userModel }) => {
   const app = express();
 
-  // Trust the proxy so rate limiting and client IPs work behind Koyeb/Vercel.
+  // Confiamos en el proxy para que el rate limiting y las IPs de cliente
+  // funcionen bien detrás de Render o Vercel.
   app.set("trust proxy", 1);
 
-  // API docs (Swagger UI). Mounted before the strict global helmet and the
-  // rate limiter so the UI's inline assets aren't blocked by the default CSP
-  // and loading the docs doesn't eat into a client's request budget.
+  // Documentación (Swagger UI). Va antes del helmet global y del rate limiter
+  // para que la CSP por defecto no bloquee los assets inline de la UI y para que
+  // abrir la documentación no consuma el presupuesto de peticiones del cliente.
   app.use(
     "/docs",
     swaggerUi.serve,
     swaggerUi.setup(openapiSpec, { customSiteTitle: "Movies API Docs" }),
   );
 
-  // Security headers.
+  // Cabeceras de seguridad.
   app.use(helmet());
 
-  // CORS whitelist (origins come from configuration).
+  // Lista blanca de CORS (los orígenes vienen de la configuración).
   app.use(middlewareCors);
 
-  // Parse incoming JSON bodies into req.body.
+  // Parsea los cuerpos JSON entrantes hacia req.body.
   app.use(express.json());
 
-  // Don't advertise that we run on Express.
+  // No anunciamos que corremos sobre Express.
   app.disable("x-powered-by");
 
-  // Throttle requests per IP.
+  // Limita las peticiones por IP.
   app.use(apiRateLimiter);
 
-  // Health check — handy for the deploy platform and uptime probes.
+  // Health check: lo usan la plataforma de despliegue y las sondas de uptime.
   app.get("/health", (req, res) => {
     res.json({ status: "ok" });
   });
 
-  // Authentication (register/login). Public routes that mint JWTs.
+  // Autenticación (registro/login). Rutas públicas que emiten JWTs.
   app.use("/auth", createAuthRouter({ userModel }));
 
-  // Movies resource. The model is injected down the router → controller chain.
+  // Recurso de películas. El modelo se inyecta por la cadena router → controlador.
   app.use("/movies", createMovieRouter({ movieModel }));
 
-  // Unknown routes → 404 in the consistent error shape.
+  // Rutas desconocidas → 404 con el formato de error consistente.
   app.use(notFoundHandler);
 
-  // Central error handler (must be last).
+  // Manejador de errores central (tiene que ir el último).
   app.use(errorHandler);
 
   return app;

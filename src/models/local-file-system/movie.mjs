@@ -1,17 +1,19 @@
 //movies.mjs
 
-// In-memory model backed by the seed JSON. Useful for local runs without a
-// database and as a fast, isolated backend for tests. Its method contract
-// mirrors the MySQL model so the controller is agnostic to the data source.
+// Modelo en memoria respaldado por el JSON semilla. Sirve para correr en local
+// sin base de datos y como backend rápido y aislado para los tests. Expone el
+// mismo contrato que el modelo de PostgreSQL, así que el controlador es
+// indiferente al origen de los datos; tests/models.contract.test.mjs pasa la
+// misma suite por los dos.
 import seed from "../../movies.json" with { type: "json" };
 import crypto from "node:crypto";
 import { SORTABLE_FIELDS } from "../../schemas/movies.mjs";
 
-// Work on a copy so the seed file is never mutated at runtime.
+// Trabajamos sobre una copia para no mutar nunca el archivo semilla.
 let movies = structuredClone(seed);
 
 export class MovieModel {
-  /** Resets the in-memory store to the original seed (handy for tests). */
+  /** Restaura el almacén en memoria a la semilla original (útil entre tests). */
   static reset() {
     movies = structuredClone(seed);
   }
@@ -47,7 +49,9 @@ export class MovieModel {
   }
 
   static async create(movieData) {
-    const newMovie = { id: crypto.randomUUID(), ...movieData };
+    // `rate` es opcional en el esquema pero NOT NULL en la base, donde por
+    // defecto vale 0. Lo replicamos aquí para que ambos backends coincidan.
+    const newMovie = { id: crypto.randomUUID(), ...movieData, rate: movieData.rate ?? 0 };
     movies.push(newMovie);
     return newMovie;
   }

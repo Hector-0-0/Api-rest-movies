@@ -1,23 +1,24 @@
-# Local development stack: MySQL + the API, both up with `docker compose up`.
-# The database is auto-seeded from movies_db.sql on first start.
+# Entorno de desarrollo local: PostgreSQL + la API, ambos con `docker compose up`.
+# La base se siembra sola desde schema.sql en el primer arranque.
 
 services:
   db:
-    image: mysql:8.0
+    image: postgres:16-alpine
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: moviesdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: moviesdb
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - db_data:/var/lib/mysql
-      # Runs only on first boot (empty data dir): creates and seeds the schema.
-      - ./movies_db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - db_data:/var/lib/postgresql/data
+      # Solo corre en el primer arranque (directorio vacío): crea y siembra el esquema.
+      - ./schema.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-prootpassword"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U postgres -d moviesdb"]
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   app:
     build: .
@@ -26,13 +27,9 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      DB_HOST: db
-      DB_USER: root
-      DB_PASSWORD: rootpassword
-      DB_NAME: moviesdb
-      DB_PORT: 3306
+      DATABASE_URL: postgres://postgres:postgres@db:5432/moviesdb
       DB_SSL: "false"
-      CORS_ORIGINS: http://localhost:3000
+      CORS_ORIGINS: http://localhost:3000,http://localhost:8080
       JWT_SECRET: local-dev-secret-change-me
       JWT_EXPIRES_IN: 1d
       BCRYPT_ROUNDS: 10

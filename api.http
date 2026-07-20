@@ -1,14 +1,14 @@
-### Movies REST API — manual request collection
-### Use with the VS Code "REST Client" extension (or JetBrains HTTP client).
-### Interactive docs: http://localhost:3000/docs
+### Movies REST API — colección de peticiones manuales
+### Para la extensión "REST Client" de VS Code (o el cliente HTTP de JetBrains).
+### Documentación interactiva: http://localhost:3000/docs
 
 @host = http://localhost:3000
 
 # ---------------------------------------------------------------------------
-# Auth
+# Autenticación
 # ---------------------------------------------------------------------------
 
-### Register a new user (always created with role "user")
+### Registrar un usuario nuevo (siempre se crea con rol "user")
 POST {{host}}/auth/register
 Content-Type: application/json
 
@@ -17,7 +17,7 @@ Content-Type: application/json
   "password": "password123"
 }
 
-### Login — returns a JWT in `token`. The seed admin can write movies.
+### Login — devuelve un JWT en `token`. El admin semilla puede escribir películas.
 # @name login
 POST {{host}}/auth/login
 Content-Type: application/json
@@ -27,27 +27,27 @@ Content-Type: application/json
   "password": "admin12345"
 }
 
-### Capture the token from the login response above for the protected routes.
+### Capturamos el token de la respuesta anterior para las rutas protegidas.
 @token = {{login.response.body.token}}
 
 # ---------------------------------------------------------------------------
-# Movies — public reads
+# Películas — lecturas públicas
 # ---------------------------------------------------------------------------
 
-### List all movies
+### Listar todas las películas
 GET {{host}}/movies
 
-### List with pagination, genre filter and sorting (-rate = descending)
+### Listar con paginación, filtro por género y orden (-rate = descendente)
 GET {{host}}/movies?page=1&limit=5&genre=Action&sort=-rate
 
-### Get a movie by id (replace with a real UUID)
+### Obtener una película por id (reemplaza por un UUID real)
 GET {{host}}/movies/5ad1a235-0d9c-410a-b32b-220d91689a08
 
 # ---------------------------------------------------------------------------
-# Movies — protected writes (require an admin Bearer token)
+# Películas — escrituras protegidas (requieren token Bearer de admin)
 # ---------------------------------------------------------------------------
 
-### Create a movie
+### Crear una película
 POST {{host}}/movies
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -62,7 +62,7 @@ Authorization: Bearer {{token}}
   "genre": ["Adventure", "Comedy"]
 }
 
-### Partially update a movie (PATCH — only send the fields you change)
+### Actualizar parcialmente (PATCH — solo se envían los campos que cambian)
 PATCH {{host}}/movies/5ad1a235-0d9c-410a-b32b-220d91689a08
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -71,12 +71,12 @@ Authorization: Bearer {{token}}
   "rate": 9.1
 }
 
-### Delete a movie
+### Eliminar una película
 DELETE {{host}}/movies/5ad1a235-0d9c-410a-b32b-220d91689a08
 Authorization: Bearer {{token}}
 
 # ---------------------------------------------------------------------------
-# System
+# Sistema
 # ---------------------------------------------------------------------------
 
 ### Health check

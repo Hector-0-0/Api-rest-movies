@@ -1,7 +1,7 @@
 {
   "name": "movies-rest-api",
   "version": "1.0.0",
-  "description": "REST API for movies built with Node.js, Express and MySQL (clean MVC architecture).",
+  "description": "REST API for movies built with Node.js, Express and PostgreSQL (clean MVC architecture).",
   "main": "src/server.mjs",
   "type": "module",
   "engines": {
@@ -17,7 +17,7 @@
   },
   "keywords": [
     "express",
-    "mysql",
+    "postgresql",
     "rest-api",
     "mvc",
     "nodejs"
@@ -32,7 +32,7 @@
     "express-rate-limit": "^8.5.2",
     "helmet": "^8.2.0",
     "jsonwebtoken": "^9.0.3",
-    "mysql2": "^3.17.1",
+    "pg": "^8.22.0",
     "swagger-ui-express": "^5.0.1",
     "zod": "4.3.6"
   },

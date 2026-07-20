@@ -1,8 +1,8 @@
 //movies.mjs
 
-// MovieController: thin HTTP layer over the injected model. Input is already
-// validated by middleware, so handlers focus on orchestration and use
-// ApiError for failures (the central error handler shapes the response).
+// MovieController: capa HTTP fina sobre el modelo inyectado. La entrada ya viene
+// validada por middleware, así que los handlers solo orquestan y lanzan ApiError
+// ante fallos (el manejador central se encarga de darle forma a la respuesta).
 import { ApiError } from "../errors/api-error.mjs";
 
 export class MovieController {
@@ -10,7 +10,7 @@ export class MovieController {
     this.movieModel = movieModel;
   }
 
-  // Arrow methods keep `this` bound when passed as route references.
+  // Los métodos flecha mantienen `this` atado al pasarlos como referencia de ruta.
 
   getAll = async (req, res) => {
     const { page, limit, genre, sort } = req.query;
@@ -22,8 +22,8 @@ export class MovieController {
       sort,
     });
 
-    // Pagination metadata travels in headers so the body stays a plain array
-    // (keeps existing clients working). Headers are exposed for browsers.
+    // La metadata de paginación viaja en cabeceras para que el cuerpo siga
+    // siendo un array plano. Las exponemos para que el navegador pueda leerlas.
     const totalPages = Math.ceil(total / limit) || 0;
     res.set("X-Total-Count", String(total));
     res.set("X-Total-Pages", String(totalPages));
