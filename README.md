@@ -1,156 +1,123 @@
-# 🎬 Movies REST API
+# Movies REST API
 
-A clean, production-style REST API for a movie catalogue, built with **Node.js, Express and MySQL** following an MVC architecture. It features JWT authentication, input validation, pagination, automated tests and interactive API docs — packaged so you can clone it and have everything running with a single command.
+A REST API for a movie catalogue with JWT authentication, built to practise a clean MVC architecture in Node.js.
 
-[![CI](https://github.com/Hector-0-0/Api-rest-movies/actions/workflows/ci.yml/badge.svg)](https://github.com/Hector-0-0/Api-rest-movies/actions/workflows/ci.yml)
-![Node.js](https://img.shields.io/badge/node-%3E%3D18-339933?logo=node.js&logoColor=white)
-![Express](https://img.shields.io/badge/express-5-000000?logo=express&logoColor=white)
-![MySQL](https://img.shields.io/badge/mysql-8-4479A1?logo=mysql&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-vitest-6E9F18?logo=vitest&logoColor=white)
-![License](https://img.shields.io/badge/license-ISC-blue)
+## Problem
 
-## 🔗 Live demo
+Most tutorial APIs collapse the moment you swap the data source or add authentication: the SQL leaks into the controllers and nothing is testable without a live database. This project keeps the data models behind a single injected interface, so the same Express app runs against PostgreSQL in production and against an in-memory store in tests. A shared contract suite runs over both backends, which is what caught two bugs that only appeared on the database side.
 
-| What | URL |
-| --- | --- |
-| API base | https://rainy-bettine-hector0-0-1de8c0b3.koyeb.app |
-| Interactive docs (Swagger) | https://rainy-bettine-hector0-0-1de8c0b3.koyeb.app/docs |
-| Frontend (Vercel) | _add your Vercel URL here_ |
+## Tech Stack
 
-> Backend deployed on **Koyeb**, MySQL hosted on **Aiven**, frontend on **Vercel**.
+`Node.js 18+` `Express 5` `PostgreSQL 16` `Zod` `JWT` `bcrypt` `Vitest` `Supertest` `Docker` `GitHub Actions`
 
-## ✨ Features
+## Features
 
-- **RESTful CRUD** for movies with a clean MVC structure (routes → controllers → models).
-- **JWT authentication**: register/login, passwords hashed with bcrypt, role-based access (`user` / `admin`).
-- **Protected writes**: reads are public; creating, updating and deleting movies requires an admin token.
-- **Robust validation** with [Zod](https://zod.dev) on every endpoint.
-- **Pagination, filtering and sorting** on `GET /movies` (`?page`, `?limit`, `?genre`, `?sort`).
-- **Security hardening**: `helmet`, configurable CORS whitelist and rate limiting.
-- **Consistent error responses** (`{ status, code, message, details? }`) via centralized error handling.
-- **Interactive API docs** (OpenAPI 3.0 + Swagger UI) served at `/docs`.
-- **Automated tests** with Vitest + Supertest (~96% statement coverage on the app layer).
-- **Dockerized**: `docker compose up` spins up the API and a seeded MySQL database.
-- **CI** with GitHub Actions running lint + tests on every push and PR.
+- REST CRUD for movies with an MVC structure (routes → controllers → models).
+- JWT authentication: register and login, bcrypt-hashed passwords, `user` / `admin` roles.
+- Reads are public; creating, updating and deleting a movie requires an admin token.
+- Request validation with Zod on every endpoint, including query strings.
+- Title search, genre filtering, sorting and pagination on `GET /movies`, all combinable.
+- A dependency-free demo client that exercises every endpoint, with role-aware UI.
+- Consistent error responses (`{ status, code, message, details? }`) from a central error handler.
+- Interactive OpenAPI 3.0 docs served at `/docs`.
+- Two interchangeable data backends (PostgreSQL and in-memory) verified by one shared contract test suite.
+- `helmet`, a CORS whitelist and per-IP rate limiting.
+- Docker Compose stack and a CI pipeline that runs lint plus tests against a real PostgreSQL service.
 
-## 🧱 Tech stack
+## Screenshots
 
-| Layer | Tools |
-| --- | --- |
-| Runtime | Node.js (ESM, `.mjs`) |
-| Framework | Express 5 |
-| Database | MySQL 8 (`mysql2` connection pool) |
-| Validation | Zod |
-| Auth | jsonwebtoken, bcryptjs |
-| Security | helmet, cors, express-rate-limit |
-| Docs | swagger-ui-express (OpenAPI 3.0) |
-| Testing | Vitest, Supertest |
-| Tooling | ESLint, Docker, GitHub Actions |
+**Demo client** — search, genre filter, sorting and pagination against the live API.
 
-## 🏗️ Architecture
+![Demo client](docs/screenshots/frontend.jpg)
 
-```
-                      ┌──────────────────────────────────────────────┐
-   HTTP request  ──▶  │  Express app (src/app.mjs)                    │
-                      │                                               │
-                      │  helmet → cors → json → rate-limit            │
-                      │              │                                │
-                      │              ▼                                │
-                      │   Router  ──▶  validate (Zod)  ──▶  auth      │
-                      │   (routes)         │              (JWT guard) │
-                      │                    ▼                          │
-                      │              Controller                       │
-                      │                    │                          │
-                      │                    ▼                          │
-                      │                  Model  ──────────────▶  MySQL│
-                      │                    │                          │
-                      │                    ▼                          │
-                      │            Central error handler              │
-                      └──────────────────────────────────────────────┘
-                            │
-                            ▼
-                   JSON response (consistent shape)
-```
+**Admin actions** — Edit and Delete only render for a token whose role is `admin`.
 
-Server start-up (`src/server.mjs`) is kept separate from the app definition (`src/app.mjs`), so tests can import the app and run it in-memory without opening a port. Data models are **injected** into the app, which lets the same code run against MySQL in production and an in-memory store in tests.
+![Admin cards](docs/screenshots/admin-cards.jpg)
 
-## 🚀 Getting started
+**Create / edit form** — genre checkboxes come from the same whitelist the API validates against; server-side Zod errors are shown per field.
+
+![Movie form](docs/screenshots/movie-form.jpg)
+
+**Swagger UI at `/docs`** — every endpoint is documented and callable from the browser.
+
+![Swagger UI](docs/screenshots/swagger.jpg)
+
+## Installation
 
 ### Option A — Docker (recommended)
 
-Requires Docker and Docker Compose. From the project root:
+Starts PostgreSQL (auto-seeded from `schema.sql`) and the API together:
 
 ```bash
+git clone https://github.com/Hector-0-0/Api-rest-movies.git
+cd Api-rest-movies
 docker compose up --build
 ```
-
-This starts MySQL (auto-seeded from `movies_db.sql`) and the API together.
 
 - API: http://localhost:3000
 - Docs: http://localhost:3000/docs
 
-A seed admin is created so you can test protected routes right away:
+### Option B — Local Node + your own PostgreSQL
+
+Requires Node.js ≥ 18 and a running PostgreSQL 13+.
+
+```bash
+git clone https://github.com/Hector-0-0/Api-rest-movies.git
+cd Api-rest-movies
+npm install
+
+cp .env.example .env          # edit the DB_* values to match your PostgreSQL
+
+createdb moviesdb
+psql -d moviesdb -f schema.sql
+
+npm run dev                   # or `npm start`
+```
+
+A seed admin is created so the protected routes can be exercised right away:
 
 | Email | Password | Role |
 | --- | --- | --- |
 | `admin@example.com` | `admin12345` | admin |
 
-### Option B — Manual
-
-Requires Node.js ≥ 18 and a running MySQL instance.
-
-```bash
-# 1. Install dependencies
-npm install
-
-# 2. Configure environment
-cp .env.example .env       # then edit values to match your MySQL
-
-# 3. Create and seed the database
-mysql -u root -p < movies_db.sql
-
-# 4. Run
-npm run dev                # auto-reload, or `npm start` for production
-```
-
-## ⚙️ Environment variables
+### Environment variables
 
 | Variable | Description | Default |
 | --- | --- | --- |
-| `NODE_ENV` | Environment (`development`, `production`, `test`) | `development` |
+| `NODE_ENV` | `development`, `production` or `test` | `development` |
 | `PORT` | Port the server listens on | `3000` |
 | `CORS_ORIGINS` | Comma-separated allowed origins (any `*.vercel.app` is allowed too) | _(empty)_ |
-| `DB_HOST` | MySQL host | `localhost` |
-| `DB_USER` | MySQL user | `root` |
-| `DB_PASSWORD` | MySQL password | _(empty)_ |
-| `DB_NAME` | Database name | `moviesdb` |
-| `DB_PORT` | MySQL port | `3306` |
-| `DB_SSL` | Set to `true` for managed providers requiring TLS (e.g. Aiven) | `false` |
+| `DATABASE_URL` | Full connection string. Wins over the `DB_*` variables below | _(unset)_ |
+| `DB_HOST` / `DB_USER` / `DB_PASSWORD` / `DB_NAME` / `DB_PORT` | Discrete connection settings | `localhost` / `postgres` / `postgres` / `moviesdb` / `5432` |
+| `DB_SSL` | `true` for managed providers requiring TLS. Implied by `sslmode=require` | `false` |
 | `JWT_SECRET` | Secret used to sign JWTs (**set a strong value in production**) | dev fallback |
 | `JWT_EXPIRES_IN` | Token lifetime (e.g. `1h`, `7d`) | `1d` |
 | `BCRYPT_ROUNDS` | bcrypt cost factor | `10` |
 
-## 📚 API endpoints
+## Usage
+
+### Endpoints
 
 | Method | Endpoint | Auth | Description |
 | --- | --- | --- | --- |
 | `POST` | `/auth/register` | — | Register a user (role `user`), returns a JWT |
 | `POST` | `/auth/login` | — | Log in, returns a JWT |
-| `GET` | `/movies` | — | List movies (supports `?page`, `?limit`, `?genre`, `?sort`) |
+| `GET` | `/movies` | — | List movies (`?q`, `?page`, `?limit`, `?genre`, `?sort`) |
 | `GET` | `/movies/:id` | — | Get a movie by id |
 | `POST` | `/movies` | admin | Create a movie |
 | `PATCH` | `/movies/:id` | admin | Partially update a movie |
 | `DELETE` | `/movies/:id` | admin | Delete a movie |
 | `GET` | `/health` | — | Health check |
-| `GET` | `/docs` | — | Interactive Swagger UI |
+| `GET` | `/docs` | — | Swagger UI |
 
-`GET /movies` returns a plain array; pagination metadata travels in the
-`X-Total-Count`, `X-Total-Pages`, `X-Page` and `X-Limit` response headers.
+`GET /movies` returns a plain array; pagination metadata travels in the `X-Total-Count`, `X-Total-Pages`, `X-Page` and `X-Limit` response headers.
 
-### Example: authenticate and create a movie
+The query parameters combine, so `?q=the&genre=Sci-Fi&sort=-rate` returns Sci-Fi titles containing "the", highest rated first. `q` is a case-insensitive partial match on the title, and `%` / `_` are matched literally rather than as wildcards.
+
+### Example: log in and create a movie
 
 ```bash
-# 1. Log in and grab the token
+# 1. Log in and capture the token
 TOKEN=$(curl -s -X POST http://localhost:3000/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@example.com","password":"admin12345"}' | jq -r .token)
@@ -160,53 +127,58 @@ curl -X POST http://localhost:3000/movies \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
-    "title": "Inception",
-    "year": 2010,
-    "director": "Christopher Nolan",
-    "duration": 148,
+    "title": "Spirited Away",
+    "year": 2001,
+    "director": "Hayao Miyazaki",
+    "duration": 125,
     "poster": "https://example.com/poster.jpg",
-    "rate": 8.8,
-    "genre": ["Action", "Sci-Fi"]
+    "rate": 8.6,
+    "genre": ["Animation", "Adventure", "Fantasy"]
   }'
 ```
 
 See [`api.http`](./api.http) for a ready-to-run request collection (VS Code REST Client).
 
-## 🧪 Tests
+### Demo client
+
+`web/index.html` is a dependency-free page that consumes the API. Open it with any static server and point the *API base URL* field at your API:
 
 ```bash
-npm test          # run the suite once
-npm run test:watch
-npm run coverage  # with coverage report
-npm run lint      # ESLint
+npx serve web        # then open http://localhost:3000 in the field
 ```
 
-Tests run against in-memory models, so **no database is required** to run them.
+### Tests
 
-## 🗂️ Project structure
+```bash
+npm test          # in-memory backend only, no database needed
+npm run test:db   # starts PostgreSQL via Docker and runs the full suite
+npm run coverage
+npm run lint
+```
+
+`tests/models.contract.test.mjs` runs the same contract over both data backends. The PostgreSQL half is skipped unless `TEST_DATABASE_URL` is set, so the default `npm test` stays database-free while CI runs everything.
+
+## Project structure
 
 ```
 src/
 ├── app.mjs              # Express app definition (no listen)
-├── server.mjs           # Entry point: wires MySQL models and starts listening
-├── config/              # Centralized env-based configuration
-├── routes/              # Route definitions (movies, auth)
+├── server.mjs           # Entry point: wires the PostgreSQL models
+├── config/              # Env-based configuration
+├── routes/              # Route definitions
 ├── controllers/         # HTTP layer
 ├── models/
-│   ├── database/        # MySQL-backed models
-│   └── local-file-system/  # In-memory models (local runs & tests)
+│   ├── database/        # PostgreSQL-backed models
+│   └── local-file-system/  # In-memory models
 ├── middlewares/         # validate, auth, cors, rate-limit, error-handler
-├── schemas/             # Zod schemas (source of truth for input shape)
+├── schemas/             # Zod schemas
 ├── auth/                # JWT helpers
-├── errors/              # ApiError
 └── docs/                # OpenAPI spec
+schema.sql               # PostgreSQL schema + seed data
 tests/                   # Vitest + Supertest suites
+web/                     # Static demo client
 ```
 
-## 📸 Screenshots
+## Author
 
-> _Add a screenshot or GIF of the Swagger UI (`/docs`) and/or the frontend here._
-
-## 📄 License
-
-ISC © Hector
+Héctor David Flores Sánchez — [LinkedIn](https://www.linkedin.com/in/héctor-david-flores-sánchez-76b636354/) · [Portfolio](https://hector-0-0.github.io/) · [Email](mailto:hector.d.flores.s@gmail.com)
