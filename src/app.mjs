@@ -5,6 +5,7 @@
 
 import express from "express";
 import helmet from "helmet";
+import { fileURLToPath } from "node:url";
 import swaggerUi from "swagger-ui-express";
 import { createMovieRouter } from "./routes/movies.mjs";
 import { createAuthRouter } from "./routes/auth.mjs";
@@ -37,6 +38,11 @@ export const createApp = ({ movieModel, userModel }) => {
     swaggerUi.serve,
     swaggerUi.setup(openapiSpec, { customSiteTitle: "Movies API Docs" }),
   );
+
+  // Cliente de demo. Se sirve desde la propia API para que el despliegue tenga
+  // una sola URL. Va antes del helmet global por el mismo motivo que /docs: la
+  // página lleva <style> y <script> en línea que la CSP por defecto bloquearía.
+  app.use(express.static(fileURLToPath(new URL("../web", import.meta.url))));
 
   // Cabeceras de seguridad.
   app.use(helmet());
