@@ -1,13 +1,14 @@
 // tests/movies.test.mjs
-// Covers the movies CRUD, input validation, pagination/filter/sort and the
-// consistent error shape. Reads are public; writes use an admin token.
+// Cubre el CRUD de películas, la validación de entrada, paginación/filtro/orden
+// y el formato de error consistente. Las lecturas son públicas; las escrituras
+// usan un token de admin.
 import { describe, it, expect, beforeEach } from "vitest";
 import request from "supertest";
 import { app, resetStores, seedUser, validMovie } from "./helpers/setup.mjs";
 
 beforeEach(() => resetStores());
 
-/** Logs in a freshly-seeded admin and returns its Bearer token. */
+/** Loguea un admin recién sembrado y devuelve su token Bearer. */
 const adminToken = async () => {
   const creds = await seedUser({ email: "admin@test.com", role: "admin" });
   const res = await request(app).post("/auth/login").send(creds);

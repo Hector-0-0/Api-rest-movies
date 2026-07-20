@@ -1,15 +1,15 @@
 // src/middlewares/rate-limit.mjs
-// Basic IP rate limiting to protect the API from abuse/bursts.
+// Rate limiting básico por IP para proteger la API de abusos y picos.
 
 import rateLimit from "express-rate-limit";
 import { config } from "../config/index.mjs";
 
 export const apiRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per window
-  standardHeaders: true, // RateLimit-* headers
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 100, // 100 peticiones por IP y ventana
+  standardHeaders: true, // cabeceras RateLimit-*
   legacyHeaders: false,
-  // Tests hit the API many times from one IP; don't throttle them.
+  // Los tests golpean la API muchas veces desde una sola IP; no los limitamos.
   skip: () => config.env === "test",
   message: {
     status: 429,

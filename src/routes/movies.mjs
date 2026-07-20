@@ -12,18 +12,18 @@ import {
 } from "../schemas/movies.mjs";
 
 /**
- * createMovieRouter: factory that wires the movies routes around an injected
- * model. Validation runs as middleware before each handler. Reads are public;
- * writes require an authenticated admin (JWT Bearer token).
+ * createMovieRouter: factory que monta las rutas de películas alrededor de un
+ * modelo inyectado. La validación corre como middleware antes de cada handler.
+ * Las lecturas son públicas; las escrituras exigen un admin autenticado.
  */
 export const createMovieRouter = ({ movieModel }) => {
   const router = Router();
   const controller = new MovieController({ movieModel });
 
-  // Guard chain reused by every write route: must be a logged-in admin.
+  // Cadena de guardas que reutilizan todas las escrituras: admin autenticado.
   const adminOnly = [authenticate, authorize("admin")];
 
-  // GET /movies?page&limit&genre&sort — list with pagination/filter/sort
+  // GET /movies?q&page&limit&genre&sort — listado con búsqueda, filtro y orden
   router.get(
     "/",
     validate(listMoviesQuerySchema, "query"),
@@ -41,7 +41,7 @@ export const createMovieRouter = ({ movieModel }) => {
     asyncHandler(controller.create),
   );
 
-  // PATCH /movies/:id — partial update
+  // PATCH /movies/:id — actualización parcial
   router.patch(
     "/:id",
     ...adminOnly,

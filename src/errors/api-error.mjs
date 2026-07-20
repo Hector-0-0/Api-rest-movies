@@ -1,14 +1,14 @@
 // src/errors/api-error.mjs
-// Application-level error carrying an HTTP status and a machine-readable code.
-// Throwing these anywhere lets the central error handler build a consistent
-// JSON response without each layer crafting its own res.status(...).json(...).
+// Error de aplicación que lleva un status HTTP y un código legible por máquina.
+// Lanzarlos desde cualquier capa permite que el manejador central arme una
+// respuesta JSON consistente, sin que cada capa haga su propio res.status().
 
 export class ApiError extends Error {
   /**
-   * @param {number} statusCode - HTTP status (e.g. 404).
-   * @param {string} code - Stable machine-readable code (e.g. "NOT_FOUND").
-   * @param {string} message - Human-readable message.
-   * @param {Array} [details] - Optional extra info (e.g. validation issues).
+   * @param {number} statusCode - Status HTTP (p. ej. 404).
+   * @param {string} code - Código estable legible por máquina (p. ej. "NOT_FOUND").
+   * @param {string} message - Mensaje legible por humanos.
+   * @param {Array} [details] - Info extra opcional (p. ej. errores de validación).
    */
   constructor(statusCode, code, message, details) {
     super(message);

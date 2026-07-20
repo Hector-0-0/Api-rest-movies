@@ -1,7 +1,7 @@
 // controllers/auth.mjs
-// HTTP layer for authentication. Hashes passwords with bcrypt on register and
-// verifies them on login, returning a signed JWT. Input is already validated
-// by middleware, so handlers focus on orchestration.
+// Capa HTTP de autenticación. Hashea contraseñas con bcrypt al registrar y las
+// verifica al iniciar sesión, devolviendo un JWT firmado. La entrada ya viene
+// validada por middleware, así que los handlers solo orquestan.
 import bcrypt from "bcryptjs";
 import { ApiError } from "../errors/api-error.mjs";
 import { config } from "../config/index.mjs";
@@ -29,8 +29,8 @@ export class AuthController {
     const { email, password } = req.body;
 
     const user = await this.userModel.findByEmail(email);
-    // Same response whether the email is unknown or the password is wrong,
-    // so we don't leak which emails exist.
+    // Misma respuesta tanto si el email no existe como si la contraseña es
+    // incorrecta, para no filtrar qué emails están registrados.
     const valid = user && (await bcrypt.compare(password, user.password_hash));
     if (!valid) throw ApiError.unauthorized("Invalid email or password");
 

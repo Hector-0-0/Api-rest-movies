@@ -1,7 +1,7 @@
 // src/middlewares/async-handler.mjs
-// Wraps an async route handler so any rejected promise is forwarded to the
-// central error handler via next(err), instead of becoming an unhandled
-// rejection. Keeps controllers free of repetitive try/catch blocks.
+// Envuelve un handler asíncrono para que cualquier promesa rechazada llegue al
+// manejador de errores central vía next(err), en lugar de quedar como unhandled
+// rejection. Ahorra try/catch repetidos en los controladores.
 
 export const asyncHandler = (handler) => (req, res, next) =>
   Promise.resolve(handler(req, res, next)).catch(next);

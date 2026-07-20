@@ -24,6 +24,3 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
-
-# Unrelated local project
-AplicativoCentroMedico/

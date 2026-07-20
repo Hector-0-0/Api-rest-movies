@@ -1,15 +1,15 @@
 //cors.mjs
 
-// CORS configured via the `cors` package. The allowed origins come from
-// configuration (CORS_ORIGINS env var); any *.vercel.app origin is allowed
-// automatically so preview deploys work without listing each one.
+// CORS configurado con el paquete `cors`. Los orígenes permitidos vienen de la
+// configuración (variable CORS_ORIGINS); cualquier origen *.vercel.app se acepta
+// automáticamente para que los despliegues de preview funcionen sin listarlos.
 import cors from "cors";
 import { config } from "../config/index.mjs";
 
 const ACCEPTED_ORIGINS = config.corsOrigins;
 
 const isAllowed = (origin) =>
-  // Requests with no Origin (curl, Postman, server-to-server) are allowed.
+  // Las peticiones sin Origin (curl, Postman, servidor a servidor) se permiten.
   !origin ||
   ACCEPTED_ORIGINS.includes(origin) ||
   origin.endsWith(".vercel.app");

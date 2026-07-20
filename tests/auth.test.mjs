@@ -1,5 +1,5 @@
 // tests/auth.test.mjs
-// Covers registration, login and the JWT-based protection of write routes.
+// Cubre registro, login y la protección por JWT de las rutas de escritura.
 import { describe, it, expect, beforeEach } from "vitest";
 import request from "supertest";
 import { app, resetStores, seedUser, validMovie } from "./helpers/setup.mjs";

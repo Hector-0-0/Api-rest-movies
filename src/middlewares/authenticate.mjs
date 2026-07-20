@@ -1,7 +1,7 @@
 // middlewares/authenticate.mjs
-// Authentication (who are you?) and authorization (are you allowed?) guards.
-// `authenticate` requires a valid Bearer JWT and attaches the user to req.user.
-// `authorize(...roles)` restricts a route to the given roles.
+// Guardas de autenticación (¿quién eres?) y autorización (¿puedes hacerlo?).
+// `authenticate` exige un JWT Bearer válido y cuelga el usuario en req.user.
+// `authorize(...roles)` restringe una ruta a los roles indicados.
 import { ApiError } from "../errors/api-error.mjs";
 import { verifyToken } from "../auth/jwt.mjs";
 
@@ -22,7 +22,7 @@ export const authenticate = (req, res, next) => {
   }
 };
 
-/** Allows the request only if req.user.role is one of the given roles. */
+/** Deja pasar la petición solo si req.user.role está entre los roles dados. */
 export const authorize =
   (...roles) =>
   (req, res, next) => {

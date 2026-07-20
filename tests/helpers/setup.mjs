@@ -1,7 +1,7 @@
 // tests/helpers/setup.mjs
-// Shared test harness: builds the app against the in-memory models so tests
-// run fast and isolated, with no MySQL required. Each test file resets the
-// stores in a beforeEach and uses these helpers to obtain auth tokens.
+// Andamiaje común de los tests: monta la app contra los modelos en memoria para
+// que corran rápido y aislados, sin base de datos. Cada archivo de test resetea
+// los almacenes en un beforeEach y usa estos helpers para obtener tokens.
 import bcrypt from "bcryptjs";
 import { createApp } from "../../src/app.mjs";
 import { MovieModel } from "../../src/models/local-file-system/movie.mjs";
@@ -11,13 +11,13 @@ export const app = createApp({ movieModel: MovieModel, userModel: UserModel });
 
 export { MovieModel, UserModel };
 
-/** Restores both in-memory stores to a clean, known state. */
+/** Devuelve ambos almacenes en memoria a un estado limpio y conocido. */
 export const resetStores = () => {
   MovieModel.reset();
   UserModel.reset();
 };
 
-/** A valid movie payload; override fields per test. */
+/** Payload válido de película; cada test sobreescribe los campos que necesite. */
 export const validMovie = (overrides = {}) => ({
   title: "Test Movie",
   year: 2020,
@@ -30,8 +30,8 @@ export const validMovie = (overrides = {}) => ({
 });
 
 /**
- * Seeds a user with the given role directly in the store and returns its
- * credentials, so a test can then log in through the real /auth/login route.
+ * Inserta un usuario con el rol indicado directamente en el almacén y devuelve
+ * sus credenciales, para que el test pueda luego loguearse por /auth/login real.
  */
 export const seedUser = async ({
   email = "user@test.com",

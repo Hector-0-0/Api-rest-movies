@@ -1,13 +1,13 @@
 // src/middlewares/validate.mjs
-// Factory that builds a validation middleware from a Zod schema. On success
-// the parsed (and coerced) data replaces the original source so controllers
-// always read clean, typed values. On failure it throws a 422 ApiError.
+// Factory que construye un middleware de validación a partir de un esquema Zod.
+// Si valida, los datos parseados (y convertidos) reemplazan al origen, de modo
+// que los controladores siempre leen valores limpios. Si no, lanza un 422.
 
 import { ApiError } from "../errors/api-error.mjs";
 
 /**
- * @param {import("zod").ZodTypeAny} schema - Zod schema to validate against.
- * @param {"body" | "query" | "params"} [source="body"] - Request part to read.
+ * @param {import("zod").ZodTypeAny} schema - Esquema Zod contra el que validar.
+ * @param {"body" | "query" | "params"} [source="body"] - Parte de la petición a leer.
  */
 export const validate =
   (schema, source = "body") =>
@@ -22,9 +22,9 @@ export const validate =
       return next(ApiError.validation("Invalid request data", details));
     }
 
-    // In Express 5 req.query is a re-parsing getter on the prototype, so a
-    // plain assignment doesn't stick. Define an own property to override it
-    // with the validated/coerced values for the rest of the chain.
+    // En Express 5, req.query es un getter del prototipo que reparsea, así que
+    // una asignación normal no persiste. Definimos una propiedad propia para
+    // sobreescribirlo con los valores validados durante el resto de la cadena.
     if (source === "query") {
       Object.defineProperty(req, "query", {
         value: result.data,

@@ -1,11 +1,11 @@
 // schemas/auth.mjs
-// Zod schemas for the authentication endpoints. They are the single source of
-// truth for what a valid register/login payload looks like.
+// Esquemas Zod de los endpoints de autenticación. Son la única fuente de verdad
+// sobre cómo debe ser un payload válido de registro o de login.
 import { z } from "zod";
 
 /**
- * registerSchema: contract for POST /auth/register.
- * Password length is enforced here so weak passwords never reach bcrypt.
+ * registerSchema: contrato de POST /auth/register.
+ * El largo mínimo se exige aquí para que una contraseña débil nunca llegue a bcrypt.
  */
 export const registerSchema = z.object({
   email: z.string().email({ message: "A valid email is required" }),
@@ -16,8 +16,8 @@ export const registerSchema = z.object({
 });
 
 /**
- * loginSchema: contract for POST /auth/login. We only check that the fields
- * are present; credential correctness is verified against the database.
+ * loginSchema: contrato de POST /auth/login. Aquí solo comprobamos que los
+ * campos vengan; que las credenciales sean correctas se verifica contra la base.
  */
 export const loginSchema = z.object({
   email: z.string().email({ message: "A valid email is required" }),
