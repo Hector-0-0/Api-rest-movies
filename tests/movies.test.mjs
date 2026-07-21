@@ -160,3 +160,31 @@ describe("unknown routes", () => {
     expect(res.body).toMatchObject({ status: 404, code: "NOT_FOUND" });
   });
 });
+
+describe("CORS", () => {
+  // La API sirve su propio cliente, así que sus peticiones llevan como Origin
+  // la URL de la propia API. Rechazarlas rompía el cliente en el despliegue
+  // aunque la configuración fuese correcta.
+  it("allows a request whose Origin matches the API's own host", async () => {
+    const res = await request(app)
+      .get("/movies")
+      .set("Origin", "http://127.0.0.1:3000")
+      .set("Host", "127.0.0.1:3000");
+
+    expect(res.status).toBe(200);
+  });
+
+  it("rejects an unknown origin with 403, not 500", async () => {
+    const res = await request(app)
+      .get("/movies")
+      .set("Origin", "https://sitio-no-permitido.com");
+
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe("FORBIDDEN");
+  });
+
+  it("still allows requests without an Origin header", async () => {
+    const res = await request(app).get("/movies");
+    expect(res.status).toBe(200);
+  });
+});
