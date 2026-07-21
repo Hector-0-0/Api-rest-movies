@@ -26,7 +26,9 @@ Most tutorial APIs collapse the moment you swap the data source or add authentic
 
 ## Screenshots
 
-**Demo client** — search, genre filter, sorting and pagination against the live API.
+All four are from the live deployment.
+
+**Demo client** — search, genre filter, sorting and pagination.
 
 ![Demo client](docs/screenshots/frontend.jpg)
 
